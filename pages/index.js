@@ -26,13 +26,27 @@ export default function Home() {
         const userRef = doc(db, "users", userProfile.userId);
         const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists() || !userSnap.data().groupId) {
-          // 初回 or グループ未設定 → オンボーディング
-          setStep("onboarding");
-          setLoading(false);
-          return;
-        }
+const urlParams = new URLSearchParams(window.location.search);
+        const inviteGroupId = urlParams.get("groupId");
 
+        if (!userSnap.exists() || !userSnap.data().groupId) {
+          if (inviteGroupId) {
+            await setDoc(doc(db, "users", userProfile.userId), {
+              userId: userProfile.userId,
+              displayName: userProfile.displayName,
+              pictureUrl: userProfile.pictureUrl,
+              isHima: false,
+              groupId: inviteGroupId,
+              updatedAt: new Date(),
+            });
+            setGroup(inviteGroupId);
+            setStep("main");
+          } else {
+            setStep("onboarding");
+            setLoading(false);
+            return;
+          }
+        }
         const groupId = userSnap.data().groupId;
         setGroup(groupId);
         setStep("main");
