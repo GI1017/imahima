@@ -3,16 +3,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { displayName } = req.body;
+  const { userId, displayName, groupId } = req.body;
 
   try {
-    // Firestoreから全ユーザーのuserIdを取得して通知を送る
+    // 同じグループの全ユーザーに通知を送る
+    // 実際にはFirestoreから同じgroupIdのユーザーを取得して送る必要があるが、
+    // 今回は簡易実装として、リクエストで受け取ったuserIdに送る
     const message = {
-      to: req.body.userId,
+      to: userId,
       messages: [
         {
           type: "text",
-          text: `🟢 ${displayName} さんが今ヒマになりました！`,
+          text: `🟢 ${displayName}さんが今ヒマになりました！`,
         },
       ],
     };
