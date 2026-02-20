@@ -341,7 +341,6 @@ export default function Home() {
       </div>
     </div>
   );
-}
 
 // 公開範囲設定画面コンポーネント
 function SettingsScreen({ friends, visibleTo, onSave, onBack }) {
