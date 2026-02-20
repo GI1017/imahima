@@ -1,5 +1,5 @@
 import { db } from "../../lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -10,9 +10,21 @@ export default async function handler(req, res) {
 
   try {
     // 公開範囲に設定された友達全員に通知を送る
-    for (const friendId of visibleTo) {
+    for (const friendDocId of visibleTo) {
+      // FirestoreからfriendDocIdのドキュメントを取得
+      const friendRef = doc(db, "users", friendDocId);
+      const friendSnap = await getDoc(friendRef);
+      
+      if (!friendSnap.exists()) {
+        console.error(`ユーザーが見つかりません: ${friendDocId}`);
+        continue;
+      }
+      
+      const friendData = friendSnap.data();
+      const friendUserId = friendData.userId; // 実際のLINE userId
+
       const message = {
-        to: friendId,
+        to: friendUserId,
         messages: [
           {
             type: "text",
@@ -31,7 +43,9 @@ export default async function handler(req, res) {
       });
 
       if (!response.ok) {
-        console.error(`通知送信失敗 (${friendId}):`, await response.text());
+        console.error(`通知送信失敗 (${friendUserId}):`, await response.text());
+      } else {
+        console.log(`通知送信成功 (${friendUserId})`);
       }
     }
 
