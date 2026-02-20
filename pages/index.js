@@ -183,10 +183,6 @@ export default function Home() {
       });
     }
     
-    setStep("main");
-    setShowToast("ヒマ状態を公開しました。");
-    setTimeout(() => setShowToast(null), 3000);
-  };
     
     setStep("main");
     setShowToast("ヒマ状態を公開しました。");
