@@ -171,6 +171,7 @@ export default function Home() {
     
     // 通知を送る
     if (true) {
+      console.log("通知APIを呼び出します:", selectedFriends);
       await fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
