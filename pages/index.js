@@ -170,8 +170,7 @@ export default function Home() {
     setIsHima(true);
     
     // 通知を送る
-    if (true) {
-      console.log("通知APIを呼び出します:", selectedFriends);
+    if (selectedFriends.length > 0) {
       await fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -179,10 +178,15 @@ export default function Home() {
           userId: profile.userId,
           displayName: profile.displayName,
           groupId: groupId,
-          visibleTo: [profile.userId],
+          visibleTo: selectedFriends,
         }),
       });
     }
+    
+    setStep("main");
+    setShowToast("ヒマ状態を公開しました。");
+    setTimeout(() => setShowToast(null), 3000);
+  };
     
     setStep("main");
     setShowToast("ヒマ状態を公開しました。");
