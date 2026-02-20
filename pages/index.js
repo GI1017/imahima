@@ -2,6 +2,18 @@ import { useEffect, useState } from "react";
 import liff from "@line/liff";
 import { db } from "../lib/firebase";
 import { doc, setDoc, onSnapshot, collection, getDoc, updateDoc } from "firebase/firestore";
+import Image from "next/image";
+
+// --- Design Tokens (Figmaより) ---
+// primary: #22c55e
+// text/default: #27272a
+// text/tertiary: #71717a
+// text/onprimary: #fafafa (白背景上の緑文字: #16a34a)
+// border/strong: #d4d4d8
+// fill/success bg: #dcfce7, text: #15803d
+// font: Noto Sans JP
+// radius/button: 8px
+// radius/footer: 24px top
 
 export default function Home() {
   const [profile, setProfile] = useState(null);
@@ -30,30 +42,17 @@ export default function Home() {
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
-          if (inviteGroupId) {
-            await setDoc(userRef, {
-              userId: userProfile.userId,
-              displayName: userProfile.displayName,
-              pictureUrl: userProfile.pictureUrl,
-              isHima: false,
-              groupId: inviteGroupId,
-              visibleTo: [],
-              updatedAt: new Date(),
-            });
-            setStep("onboarding");
-          } else {
-            const newGroupId = userProfile.userId;
-            await setDoc(userRef, {
-              userId: userProfile.userId,
-              displayName: userProfile.displayName,
-              pictureUrl: userProfile.pictureUrl,
-              isHima: false,
-              groupId: newGroupId,
-              visibleTo: [],
-              updatedAt: new Date(),
-            });
-            setStep("onboarding");
-          }
+          const newGroupId = inviteGroupId || userProfile.userId;
+          await setDoc(userRef, {
+            userId: userProfile.userId,
+            displayName: userProfile.displayName,
+            pictureUrl: userProfile.pictureUrl,
+            isHima: false,
+            groupId: newGroupId,
+            visibleTo: [],
+            updatedAt: new Date(),
+          });
+          setStep("onboarding");
         } else {
           const userData = userSnap.data();
           setIsHima(userData.isHima || false);
@@ -98,9 +97,8 @@ export default function Home() {
     });
     setIsHima(himaStatus);
     setStep("main");
-    
     if (himaStatus) {
-      setShowToast("ヒマ状態を公開しました。");
+      setShowToast("暇状態を公開しました。");
       setTimeout(() => setShowToast(null), 3000);
     }
   };
@@ -142,20 +140,19 @@ export default function Home() {
 
   const saveVisibleToAndTurnOn = async (selectedFriends) => {
     if (!profile) return;
-    
     const userRef = doc(db, "users", profile.userId);
     const userSnap = await getDoc(userRef);
     const groupId = userSnap.data().groupId;
-    
+
     await updateDoc(userRef, {
       visibleTo: selectedFriends,
       isHima: true,
       updatedAt: new Date(),
     });
-    
+
     setVisibleTo(selectedFriends);
     setIsHima(true);
-    
+
     if (selectedFriends.length > 0) {
       await fetch("/api/notify", {
         method: "POST",
@@ -168,81 +165,56 @@ export default function Home() {
         }),
       });
     }
-    
+
     setStep("main");
     setShowToast("暇状態を公開しました。");
     setTimeout(() => setShowToast(null), 3000);
   };
 
+  // --- Loading ---
   if (loading || step === "loading") {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <p className="text-gray-500 text-lg">読み込み中...</p>
+      <div style={styles.loadingScreen}>
+        <p style={styles.loadingText}>読み込み中...</p>
       </div>
     );
   }
 
+  // --- Onboarding (03-01) ---
   if (step === "onboarding") {
     return (
-      <div className="min-h-screen bg-[#00C300] flex flex-col items-center justify-between p-6 text-white">
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <h1 className="text-4xl font-bold mb-12">
+      <div style={styles.onboardingScreen}>
+        {/* Title */}
+        <div style={styles.onboardingTitleArea}>
+          <p style={styles.onboardingTitle}>
             イマヒマ。を<br />始めましょう！<br />あなたは今暇ですか？
-          </h1>
-          <div className="relative w-full max-w-md h-64 mb-12">
-            <svg viewBox="0 0 300 200" className="w-full h-full">
-              {/* シロクマ1 */}
-              <ellipse cx="220" cy="80" rx="60" ry="45" fill="white" />
-              <ellipse cx="200" cy="75" rx="3" ry="3" fill="black" />
-              <ellipse cx="210" cy="78" rx="2" ry="1" fill="black" />
-              <path d="M 205 82 Q 210 85 215 82" stroke="black" strokeWidth="1.5" fill="none" />
-              <ellipse cx="185" cy="65" rx="12" ry="15" fill="white" />
-              <ellipse cx="235" cy="65" rx="12" ry="15" fill="white" />
-              
-              {/* シロクマ2 */}
-              <ellipse cx="100" cy="130" rx="70" ry="50" fill="white" />
-              <ellipse cx="75" cy="125" rx="3" ry="3" fill="black" />
-              <ellipse cx="90" cy="128" rx="2" ry="1" fill="black" />
-              <path d="M 80 132 Q 85 135 90 132" stroke="black" strokeWidth="1.5" fill="none" />
-              <ellipse cx="55" cy="115" rx="15" ry="18" fill="white" />
-              <ellipse cx="115" cy="115" rx="15" ry="18" fill="white" />
-              
-              {/* 雪の結晶 */}
-              <g transform="translate(50, 50)">
-                <line x1="0" y1="-10" x2="0" y2="10" stroke="white" strokeWidth="2" />
-                <line x1="-10" y1="0" x2="10" y2="0" stroke="white" strokeWidth="2" />
-                <line x1="-7" y1="-7" x2="7" y2="7" stroke="white" strokeWidth="2" />
-                <line x1="-7" y1="7" x2="7" y2="-7" stroke="white" strokeWidth="2" />
-              </g>
-              <g transform="translate(180, 150)">
-                <line x1="0" y1="-8" x2="0" y2="8" stroke="white" strokeWidth="2" />
-                <line x1="-8" y1="0" x2="8" y2="0" stroke="white" strokeWidth="2" />
-                <line x1="-6" y1="-6" x2="6" y2="6" stroke="white" strokeWidth="2" />
-                <line x1="-6" y1="6" x2="6" y2="-6" stroke="white" strokeWidth="2" />
-              </g>
-              <g transform="translate(260, 120)">
-                <line x1="0" y1="-6" x2="0" y2="6" stroke="white" strokeWidth="1.5" />
-                <line x1="-6" y1="0" x2="6" y2="0" stroke="white" strokeWidth="1.5" />
-                <line x1="-4" y1="-4" x2="4" y2="4" stroke="white" strokeWidth="1.5" />
-                <line x1="-4" y1="4" x2="4" y2="-4" stroke="white" strokeWidth="1.5" />
-              </g>
-            </svg>
-          </div>
+          </p>
         </div>
-        <div className="w-full max-w-md space-y-4">
+
+        {/* Illustration */}
+        <div style={styles.onboardingIllustArea}>
+          <img
+            src="/images/onboarding-bears.svg"
+            alt="イマヒマ。イラスト"
+            style={styles.onboardingIllust}
+          />
+        </div>
+
+        {/* Footer buttons */}
+        <div style={styles.onboardingFooter}>
           <button
             onClick={() => completeOnboarding(true)}
-            className="w-full py-4 bg-white text-[#00C300] text-lg font-bold rounded-lg"
+            style={styles.onboardingBtnPrimary}
           >
             イマヒマ。
           </button>
           <button
             onClick={() => completeOnboarding(false)}
-            className="w-full py-4 bg-transparent border-2 border-white text-white text-lg font-bold rounded-lg"
+            style={styles.onboardingBtnOutline}
           >
             ヒマじゃない
           </button>
-          <p className="text-sm text-white text-center opacity-90">
+          <p style={styles.onboardingNote}>
             暇な状態は1時間たつと自動的に解除されます。
           </p>
         </div>
@@ -250,113 +222,127 @@ export default function Home() {
     );
   }
 
+  // --- Settings (07-01) ---
   if (step === "settings") {
-    return <SettingsScreen friends={friends} visibleTo={visibleTo} onSave={saveVisibleToAndTurnOn} onBack={() => setStep("main")} />;
+    return (
+      <SettingsScreen
+        friends={friends}
+        visibleTo={visibleTo}
+        onSave={saveVisibleToAndTurnOn}
+        onBack={() => setStep("main")}
+      />
+    );
   }
 
-  const himaFriends = friends.filter((f) => f.isHima && f.visibleTo?.includes(profile?.userId));
-  const notHimaFriends = friends.filter((f) => !f.isHima || !f.visibleTo?.includes(profile?.userId));
+  // --- Main (05-01 / 05-02 / 05-03) ---
+  const himaFriends = friends.filter(
+    (f) => f.isHima && f.visibleTo?.includes(profile?.userId)
+  );
+  const notHimaFriends = friends.filter(
+    (f) => !f.isHima || !f.visibleTo?.includes(profile?.userId)
+  );
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {showToast && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#00C300] text-white px-6 py-3 rounded-lg shadow-lg z-50">
-          {showToast}
-        </div>
-      )}
+    <div style={styles.mainScreen}>
+      {/* Toast */}
+      {showToast && <Toast message={showToast} />}
 
-      <div className="flex items-center justify-between p-4 border-b">
-        <h1 className="text-3xl font-bold text-[#00C300]">イマヒマ。</h1>
-        <button className="text-2xl text-gray-400">×</button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-base font-normal text-gray-700">イマヒマ。な友達</h2>
-        </div>
-
-        {himaFriends.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">今ヒマな人はいません</p>
-        ) : (
-          <ul className="space-y-3 mb-8">
-            {himaFriends.map((friend) => (
-              <li key={friend.userId} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={friend.pictureUrl}
-                    alt={friend.displayName}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <span className="text-gray-900">{friend.displayName}</span>
-                </div>
-                <button className="text-sm text-blue-500">トークする</button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <h3 className="text-base font-normal text-gray-700 mb-4">ヒマじゃない友達</h3>
-        {notHimaFriends.length === 0 ? (
-          <p className="text-gray-400 text-center py-4">ヒマじゃない友達がいません</p>
-        ) : (
-          <ul className="space-y-3 mb-8">
-            {notHimaFriends.map((friend) => (
-              <li key={friend.userId} className="flex items-center gap-3">
-                <img
-                  src={friend.pictureUrl}
-                  alt={friend.displayName}
-                  className="w-10 h-10 rounded-full"
-                />
-                <span className="text-gray-600">{friend.displayName}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <button
-          onClick={inviteFriends}
-          className="w-full py-3 bg-white border border-gray-300 text-gray-700 rounded-lg mb-4"
-        >
-          友達を招待する 👥
+      {/* Header */}
+      <div style={styles.mainHeader}>
+        {/* 左: closeボタン（スペース確保） */}
+        <div style={styles.navBtn} />
+        {/* ロゴ */}
+        <img
+          src="/images/logo.svg"
+          alt="イマヒマ。"
+          style={styles.logoImg}
+        />
+        {/* 右: closeボタン */}
+        <button style={styles.navBtn}>
+          <img src="/icons/close.svg" alt="閉じる" style={styles.iconImg} />
         </button>
       </div>
 
-      <div className="bg-[#00C300] rounded-t-3xl p-6 text-white">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div style={styles.mainDivider} />
+
+      {/* List */}
+      <div style={styles.mainList}>
+        {/* イマヒマな友達 */}
+        <div style={styles.friendSection}>
+          <p style={styles.sectionLabel}>イマヒマ。な友達</p>
+          {himaFriends.length === 0 ? (
+            <p style={styles.emptyText}>今ヒマな人はいません</p>
+          ) : (
+            himaFriends.map((friend) => (
+              <FriendRow
+                key={friend.userId}
+                friend={friend}
+                actionLabel="トークする"
+                onAction={() => {}}
+              />
+            ))
+          )}
+        </div>
+
+        {/* ヒマじゃない友達 */}
+        <div style={styles.friendSection}>
+          <p style={styles.sectionLabel}>ヒマじゃない友達</p>
+          {notHimaFriends.length === 0 ? (
+            <p style={styles.emptyText}>ヒマじゃない友達がいません</p>
+          ) : (
+            notHimaFriends.map((friend) => (
+              <FriendRow key={friend.userId} friend={friend} />
+            ))
+          )}
+        </div>
+
+        {/* 友達を招待する */}
+        <button onClick={inviteFriends} style={styles.inviteBtn}>
+          <span style={styles.inviteBtnText}>友達を招待する</span>
+          <img src="/icons/person_search.svg" alt="" style={styles.iconImg} />
+        </button>
+      </div>
+
+      {/* Footer */}
+      <div style={styles.footer}>
+        <div style={styles.footerMe}>
+          {/* 自分のアバター＋名前 */}
+          <div style={styles.footerMeInfo}>
             {profile && (
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+              <>
                 <img
                   src={profile.pictureUrl}
                   alt={profile.displayName}
-                  className="w-10 h-10 rounded-full"
+                  style={styles.footerAvatar}
                 />
-              </div>
+                <p style={styles.footerAvatarName}>{profile.displayName}</p>
+              </>
             )}
-            <div>
-              <p className="text-sm">{profile?.displayName}さん！</p>
-              <p className="text-xs opacity-90">
-                {isHima ? "イマヒマ。しています。" : "今の状況はどうですか？"}
-              </p>
-            </div>
           </div>
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-            <div className="text-2xl">🐻</div>
+          {/* テキスト */}
+          <div style={styles.footerMeText}>
+            <p style={styles.footerMeTextLine}>{profile?.displayName}さん！</p>
+            <p style={styles.footerMeTextLine}>
+              {isHima ? "イマヒマ。しています。" : "今の状況はどうですか？"}
+            </p>
+          </div>
+          {/* マスコット */}
+          <div style={styles.footerMascotCircle}>
+            <img
+              src={isHima ? "/images/mascot-bear-hima.svg" : "/images/mascot-bear-nothima.svg"}
+              alt="マスコット"
+              style={styles.footerMascotImg}
+            />
           </div>
         </div>
+
         {isHima ? (
-          <button
-            onClick={turnOffHima}
-            className="w-full py-3 bg-white text-gray-700 font-bold rounded-lg"
-          >
-            ヒマじゃなくなった
+          <button onClick={turnOffHima} style={styles.footerBtnWhite}>
+            <span style={styles.footerBtnWhiteText}>ヒマじゃなくなった</span>
           </button>
         ) : (
-          <button
-            onClick={openSettings}
-            className="w-full py-3 bg-white text-[#00C300] font-bold rounded-lg"
-          >
-            イマヒマ。
+          <button onClick={openSettings} style={styles.footerBtnWhite}>
+            <span style={styles.footerBtnGreenText}>イマヒマ。</span>
           </button>
         )}
       </div>
@@ -364,61 +350,524 @@ export default function Home() {
   );
 }
 
+// --- Settings Screen (07-01) ---
 function SettingsScreen({ friends, visibleTo, onSave, onBack }) {
   const [selected, setSelected] = useState(visibleTo);
 
   const toggleFriend = (userId) => {
     setSelected((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
     );
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <div className="flex items-center gap-4 p-4 border-b">
-        <button onClick={onBack} className="text-2xl text-[#00C300]">←</button>
-        <h1 className="text-xl font-bold text-gray-900">暇状態の公開範囲を設定</h1>
+    <div style={styles.settingsScreen}>
+      {/* Header */}
+      <div style={styles.settingsHeader}>
+        <button onClick={onBack} style={styles.navBtn}>
+          <img src="/icons/arrow_back_ios_new.svg" alt="戻る" style={styles.iconImgGreen} />
+        </button>
+        <img src="/images/logo.svg" alt="イマヒマ。" style={styles.logoImg} />
+        <div style={styles.navBtn} />
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
+
+      {/* Title */}
+      <div style={styles.settingsTitleArea}>
+        <p style={styles.settingsTitle}>暇状態の公開範囲を設定</p>
+      </div>
+
+      {/* List */}
+      <div style={styles.settingsList}>
         {friends.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">友達がまだいません</p>
+          <p style={styles.emptyText}>友達がまだいません</p>
         ) : (
-          <ul className="space-y-4">
-            {friends.map((friend) => (
-              <li key={friend.userId} className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={friend.pictureUrl}
-                    alt={friend.displayName}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <span className="text-gray-900">{friend.displayName}</span>
-                </div>
-                <button
-                  onClick={() => toggleFriend(friend.userId)}
-                  className={`relative w-12 h-6 rounded-full transition-colors ${
-                    selected.includes(friend.userId) ? "bg-[#00C300]" : "bg-gray-300"
-                  }`}
-                >
-                  <div
-                    className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                      selected.includes(friend.userId) ? "translate-x-7" : "translate-x-1"
-                    }`}
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
+          friends.map((friend) => (
+            <div key={friend.userId} style={styles.settingsRow}>
+              <img
+                src={friend.pictureUrl}
+                alt={friend.displayName}
+                style={styles.friendAvatar}
+              />
+              <span style={styles.friendName}>{friend.displayName}</span>
+              {/* Toggle Switch */}
+              <button
+                onClick={() => toggleFriend(friend.userId)}
+                style={{
+                  ...styles.toggle,
+                  backgroundColor: selected.includes(friend.userId)
+                    ? "#22c55e"
+                    : "#71717a",
+                }}
+              >
+                <div
+                  style={{
+                    ...styles.toggleThumb,
+                    transform: selected.includes(friend.userId)
+                      ? "translateX(20px)"
+                      : "translateX(2px)",
+                  }}
+                />
+              </button>
+            </div>
+          ))
         )}
       </div>
-      <div className="p-4">
-        <button
-          onClick={() => onSave(selected)}
-          className="w-full py-4 bg-[#00C300] text-white font-bold rounded-lg"
-        >
-          暇状態を公開する
+
+      {/* Footer button */}
+      <div style={styles.settingsFooter}>
+        <button onClick={() => onSave(selected)} style={styles.greenBtn}>
+          <span style={styles.greenBtnText}>暇状態を公開する</span>
         </button>
       </div>
     </div>
   );
 }
+
+// --- Sub Components ---
+function FriendRow({ friend, actionLabel, onAction }) {
+  return (
+    <div style={styles.friendRow}>
+      <img
+        src={friend.pictureUrl}
+        alt={friend.displayName}
+        style={styles.friendAvatar}
+      />
+      <span style={styles.friendName}>{friend.displayName}</span>
+      {actionLabel && (
+        <button onClick={onAction} style={styles.friendActionBtn}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Toast({ message }) {
+  return (
+    <div style={styles.toastWrapper}>
+      <div style={styles.toast}>
+        <p style={styles.toastText}>{message}</p>
+      </div>
+    </div>
+  );
+}
+
+// --- Styles ---
+const fontBase = {
+  fontFamily: "'Noto Sans JP', sans-serif",
+  fontSize: "16px",
+  lineHeight: "1.75",
+  letterSpacing: "0.48px",
+};
+
+const styles = {
+  // Loading
+  loadingScreen: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    backgroundColor: "#fafafa",
+  },
+  loadingText: {
+    ...fontBase,
+    color: "#71717a",
+  },
+
+  // Onboarding (03-01)
+  onboardingScreen: {
+    minHeight: "100vh",
+    backgroundColor: "#22c55e",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: "8px",
+  },
+  onboardingTitleArea: {
+    padding: "16px",
+  },
+  onboardingTitle: {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: "40px",
+    fontWeight: "600",
+    lineHeight: "1.5",
+    letterSpacing: "0.6px",
+    color: "#ffffff",
+    whiteSpace: "pre-wrap",
+    margin: 0,
+  },
+  onboardingIllustArea: {
+    padding: "16px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  onboardingIllust: {
+    width: "320px",
+    height: "320px",
+    objectFit: "contain",
+  },
+  onboardingFooter: {
+    padding: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    alignItems: "center",
+  },
+  onboardingBtnPrimary: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    padding: "10px 16px",
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: "16px",
+    fontWeight: "500",
+    lineHeight: "1.75",
+    letterSpacing: "0.48px",
+    color: "#16a34a",
+    textAlign: "center",
+    cursor: "pointer",
+  },
+  onboardingBtnOutline: {
+    width: "100%",
+    backgroundColor: "transparent",
+    border: "2px solid #fafafa",
+    borderRadius: "8px",
+    padding: "10px 16px",
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: "16px",
+    fontWeight: "500",
+    lineHeight: "1.75",
+    letterSpacing: "0.48px",
+    color: "#ffffff",
+    textAlign: "center",
+    cursor: "pointer",
+  },
+  onboardingNote: {
+    ...fontBase,
+    color: "#ffffff",
+    margin: 0,
+    width: "100%",
+  },
+
+  // Main (05-01)
+  mainScreen: {
+    minHeight: "100vh",
+    backgroundColor: "#ffffff",
+    display: "flex",
+    flexDirection: "column",
+    position: "relative",
+  },
+  mainHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "20px 16px",
+  },
+  mainDivider: {
+    height: "1px",
+    backgroundColor: "#d4d4d8",
+    margin: "0",
+  },
+  mainList: {
+    flex: 1,
+    overflowY: "auto",
+    padding: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "32px",
+  },
+
+  // Logo
+  logoImg: {
+    height: "48px",
+    width: "auto",
+  },
+
+  // Nav button
+  navBtn: {
+    width: "40px",
+    height: "44px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "8px",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+  },
+  iconImg: {
+    width: "24px",
+    height: "24px",
+  },
+  iconImgGreen: {
+    width: "24px",
+    height: "24px",
+    filter: "invert(48%) sepia(79%) saturate(476%) hue-rotate(86deg) brightness(118%) contrast(119%)",
+  },
+
+  // Friend sections
+  friendSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  sectionLabel: {
+    ...fontBase,
+    fontWeight: "500",
+    color: "#71717a",
+    margin: 0,
+  },
+  emptyText: {
+    ...fontBase,
+    color: "#71717a",
+    textAlign: "center",
+    margin: 0,
+    padding: "8px 0",
+  },
+  friendRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    height: "54px",
+    padding: "8px",
+  },
+  friendAvatar: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "9999px",
+    objectFit: "cover",
+    flexShrink: 0,
+  },
+  friendName: {
+    ...fontBase,
+    color: "#27272a",
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  friendActionBtn: {
+    ...fontBase,
+    color: "#27272a",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "10px 16px",
+    flexShrink: 0,
+  },
+
+  // Invite button
+  inviteBtn: {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    padding: "10px 16px",
+    paddingLeft: "32px",
+    border: "2px solid #d4d4d8",
+    borderRadius: "8px",
+    backgroundColor: "#ffffff",
+    cursor: "pointer",
+  },
+  inviteBtnText: {
+    ...fontBase,
+    fontWeight: "500",
+    color: "#27272a",
+  },
+
+  // Toast
+  toastWrapper: {
+    position: "fixed",
+    top: "24px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 50,
+  },
+  toast: {
+    backgroundColor: "#dcfce7",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    boxShadow: "0px 0px 32px 0px rgba(0,0,0,0.25)",
+  },
+  toastText: {
+    ...fontBase,
+    color: "#15803d",
+    textAlign: "center",
+    margin: 0,
+  },
+
+  // Footer
+  footer: {
+    backgroundColor: "#22c55e",
+    borderTopLeftRadius: "24px",
+    borderTopRightRadius: "24px",
+    boxShadow: "0px 0px 24px 0px rgba(0,0,0,0.25)",
+    padding: "24px 16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    alignItems: "center",
+  },
+  footerMe: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    padding: "8px",
+    width: "100%",
+  },
+  footerMeInfo: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "8px",
+    flexShrink: 0,
+  },
+  footerAvatar: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "9999px",
+    objectFit: "cover",
+  },
+  footerAvatarName: {
+    ...fontBase,
+    color: "#ffffff",
+    margin: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  footerMeText: {
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
+  },
+  footerMeTextLine: {
+    ...fontBase,
+    color: "#ffffff",
+    margin: 0,
+    whiteSpace: "nowrap",
+  },
+  footerMascotCircle: {
+    width: "81px",
+    height: "81px",
+    borderRadius: "9999px",
+    backgroundColor: "#e4e4e7",
+    overflow: "hidden",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerMascotImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  footerBtnWhite: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    padding: "10px 16px",
+    cursor: "pointer",
+    textAlign: "center",
+  },
+  footerBtnWhiteText: {
+    ...fontBase,
+    fontWeight: "500",
+    color: "#27272a",
+  },
+  footerBtnGreenText: {
+    ...fontBase,
+    fontWeight: "500",
+    color: "#16a34a",
+  },
+
+  // Settings (07-01)
+  settingsScreen: {
+    minHeight: "100vh",
+    backgroundColor: "#ffffff",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  settingsHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "20px 16px",
+  },
+  settingsTitleArea: {
+    padding: "16px",
+  },
+  settingsTitle: {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: "40px",
+    fontWeight: "600",
+    lineHeight: "1.5",
+    letterSpacing: "0.6px",
+    color: "#27272a",
+    margin: 0,
+    whiteSpace: "pre-wrap",
+  },
+  settingsList: {
+    flex: 1,
+    overflowY: "auto",
+    padding: "16px",
+    borderTop: "2px solid #d4d4d8",
+    borderBottom: "2px solid #d4d4d8",
+    display: "flex",
+    flexDirection: "column",
+  },
+  settingsRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    height: "54px",
+    padding: "8px",
+  },
+  toggle: {
+    position: "relative",
+    width: "52px",
+    height: "32px",
+    borderRadius: "9999px",
+    border: "none",
+    cursor: "pointer",
+    flexShrink: 0,
+    transition: "background-color 0.2s",
+    padding: "2px 4px",
+  },
+  toggleThumb: {
+    position: "absolute",
+    top: "4px",
+    width: "24px",
+    height: "24px",
+    borderRadius: "9999px",
+    backgroundColor: "#ffffff",
+    transition: "transform 0.2s",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+  },
+  settingsFooter: {
+    padding: "16px",
+  },
+  greenBtn: {
+    width: "100%",
+    backgroundColor: "#22c55e",
+    border: "none",
+    borderRadius: "8px",
+    padding: "10px 16px",
+    cursor: "pointer",
+    textAlign: "center",
+  },
+  greenBtnText: {
+    ...fontBase,
+    fontWeight: "500",
+    color: "#fafafa",
+  },
+};
