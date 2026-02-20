@@ -155,13 +155,34 @@ export default function Home() {
   // 公開範囲を保存して暇状態をON
   const saveVisibleToAndTurnOn = async (selectedFriends) => {
     if (!profile) return;
-    await updateDoc(doc(db, "users", profile.userId), {
+    
+    const userRef = doc(db, "users", profile.userId);
+    const userSnap = await getDoc(userRef);
+    const groupId = userSnap.data().groupId;
+    
+    await updateDoc(userRef, {
       visibleTo: selectedFriends,
       isHima: true,
       updatedAt: new Date(),
     });
+    
     setVisibleTo(selectedFriends);
     setIsHima(true);
+    
+    // 通知を送る
+    if (selectedFriends.length > 0) {
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: profile.userId,
+          displayName: profile.displayName,
+          groupId: groupId,
+          visibleTo: selectedFriends,
+        }),
+      });
+    }
+    
     setStep("main");
     setShowToast("ヒマ状態を公開しました。");
     setTimeout(() => setShowToast(null), 3000);
