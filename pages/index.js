@@ -2,18 +2,6 @@ import { useEffect, useState } from "react";
 import liff from "@line/liff";
 import { db } from "../lib/firebase";
 import { doc, setDoc, onSnapshot, collection, getDoc, updateDoc } from "firebase/firestore";
-import Image from "next/image";
-
-// --- Design Tokens (Figmaより) ---
-// primary: #22c55e
-// text/default: #27272a
-// text/tertiary: #71717a
-// text/onprimary: #fafafa (白背景上の緑文字: #16a34a)
-// border/strong: #d4d4d8
-// fill/success bg: #dcfce7, text: #15803d
-// font: Noto Sans JP
-// radius/button: 8px
-// radius/footer: 24px top
 
 export default function Home() {
   const [profile, setProfile] = useState(null);
@@ -110,7 +98,6 @@ export default function Home() {
         const userRef = doc(db, "users", profile.userId);
         const userSnap = await getDoc(userRef);
         const groupId = userSnap.data().groupId;
-
         await liff.shareTargetPicker([
           {
             type: "text",
@@ -134,10 +121,6 @@ export default function Home() {
     setIsHima(false);
   };
 
-  const openSettings = () => {
-    setStep("settings");
-  };
-
   const saveVisibleToAndTurnOn = async (selectedFriends) => {
     if (!profile) return;
     const userRef = doc(db, "users", profile.userId);
@@ -149,7 +132,6 @@ export default function Home() {
       isHima: true,
       updatedAt: new Date(),
     });
-
     setVisibleTo(selectedFriends);
     setIsHima(true);
 
@@ -160,7 +142,7 @@ export default function Home() {
         body: JSON.stringify({
           userId: profile.userId,
           displayName: profile.displayName,
-          groupId: groupId,
+          groupId,
           visibleTo: selectedFriends,
         }),
       });
@@ -174,8 +156,8 @@ export default function Home() {
   // --- Loading ---
   if (loading || step === "loading") {
     return (
-      <div style={styles.loadingScreen}>
-        <p style={styles.loadingText}>読み込み中...</p>
+      <div style={s.loadingScreen}>
+        <p style={s.loadingText}>読み込み中...</p>
       </div>
     );
   }
@@ -183,40 +165,31 @@ export default function Home() {
   // --- Onboarding (03-01) ---
   if (step === "onboarding") {
     return (
-      <div style={styles.onboardingScreen}>
-        {/* Title */}
-        <div style={styles.onboardingTitleArea}>
-          <p style={styles.onboardingTitle}>
+      <div style={s.onboardingScreen}>
+        <div style={s.onboardingTitleArea}>
+          <p style={s.onboardingTitle}>
             イマヒマ。を<br />始めましょう！<br />あなたは今暇ですか？
           </p>
         </div>
 
-        {/* Illustration */}
-        <div style={styles.onboardingIllustArea}>
+        {/* イラスト: 残り高さをすべて使いフッターに合わせてフレキシブル */}
+        <div style={s.onboardingIllustArea}>
           <img
             src="/images/onboarding-bears.svg"
             alt="イマヒマ。イラスト"
-            style={styles.onboardingIllust}
+            style={s.onboardingIllust}
           />
         </div>
 
-        {/* Footer buttons */}
-        <div style={styles.onboardingFooter}>
-          <button
-            onClick={() => completeOnboarding(true)}
-            style={styles.onboardingBtnPrimary}
-          >
+        {/* フッター固定 */}
+        <div style={s.onboardingFooter}>
+          <button onClick={() => completeOnboarding(true)} style={s.onboardingBtnPrimary}>
             イマヒマ。
           </button>
-          <button
-            onClick={() => completeOnboarding(false)}
-            style={styles.onboardingBtnOutline}
-          >
+          <button onClick={() => completeOnboarding(false)} style={s.onboardingBtnOutline}>
             ヒマじゃない
           </button>
-          <p style={styles.onboardingNote}>
-            暇な状態は1時間たつと自動的に解除されます。
-          </p>
+          <p style={s.onboardingNote}>暇な状態は1時間たつと自動的に解除されます。</p>
         </div>
       </div>
     );
@@ -234,7 +207,7 @@ export default function Home() {
     );
   }
 
-  // --- Main (05-01 / 05-02 / 05-03) ---
+  // --- Main (05-01) ---
   const himaFriends = friends.filter(
     (f) => f.isHima && f.visibleTo?.includes(profile?.userId)
   );
@@ -243,52 +216,39 @@ export default function Home() {
   );
 
   return (
-    <div style={styles.mainScreen}>
-      {/* Toast */}
+    <div style={s.mainScreen}>
       {showToast && <Toast message={showToast} />}
 
-      {/* Header */}
-      <div style={styles.mainHeader}>
-        {/* 左: closeボタン（スペース確保） */}
-        <div style={styles.navBtn} />
-        {/* ロゴ */}
-        <img
-          src="/images/logo.svg"
-          alt="イマヒマ。"
-          style={styles.logoImg}
-        />
-        {/* 右: closeボタン */}
-        <button style={styles.navBtn}>
-          <img src="/icons/close.svg" alt="閉じる" style={styles.iconImg} />
+      {/* ヘッダー: 上部固定 */}
+      <div style={s.mainHeader}>
+        <div style={s.navBtn} />
+        <img src="/images/logo.svg" alt="イマヒマ。" style={s.logoImg} />
+        <button style={s.navBtn}>
+          <img src="/icons/close.svg" alt="閉じる" style={s.iconImg} />
         </button>
       </div>
 
-      <div style={styles.mainDivider} />
+      {/* ヘッダー高さ分スペーサー */}
+      <div style={s.mainHeaderSpacer} />
+      <div style={s.mainDivider} />
 
-      {/* List */}
-      <div style={styles.mainList}>
-        {/* イマヒマな友達 */}
-        <div style={styles.friendSection}>
-          <p style={styles.sectionLabel}>イマヒマ。な友達</p>
+      {/* リスト: フッターにかぶらないようpaddingBottom確保 */}
+      <div style={s.mainList}>
+        <div style={s.friendSection}>
+          <p style={s.sectionLabel}>イマヒマ。な友達</p>
           {himaFriends.length === 0 ? (
-            <p style={styles.emptyText}>今ヒマな人はいません</p>
+            <p style={s.emptyText}>今ヒマな人はいません</p>
           ) : (
             himaFriends.map((friend) => (
-              <FriendRow
-                key={friend.userId}
-                friend={friend}
-                actionLabel="トークする"
-                onAction={() => {}}
-              />
+              <FriendRow key={friend.userId} friend={friend} actionLabel="トークする" onAction={() => {}} />
             ))
           )}
         </div>
 
-        {/* ヒマじゃない友達 */}
-        <div style={styles.friendSection}>
-          <p style={styles.sectionLabel}>ヒマじゃない友達</p>
+        <div style={s.friendSection}>
+          <p style={s.sectionLabel}>ヒマじゃない友達</p>
           {notHimaFriends.length === 0 ? (
-            <p style={styles.emptyText}>ヒマじゃない友達がいません</p>
+            <p style={s.emptyText}>ヒマじゃない友達がいません</p>
           ) : (
             notHimaFriends.map((friend) => (
               <FriendRow key={friend.userId} friend={friend} />
@@ -296,53 +256,47 @@ export default function Home() {
           )}
         </div>
 
-        {/* 友達を招待する */}
-        <button onClick={inviteFriends} style={styles.inviteBtn}>
-          <span style={styles.inviteBtnText}>友達を招待する</span>
-          <img src="/icons/person_search.svg" alt="" style={styles.iconImg} />
+        <button onClick={inviteFriends} style={s.inviteBtn}>
+          <span style={s.inviteBtnText}>友達を招待する</span>
+          <img src="/icons/person_search.svg" alt="" style={s.iconImg} />
         </button>
       </div>
 
-      {/* Footer */}
-      <div style={styles.footer}>
-        <div style={styles.footerMe}>
-          {/* 自分のアバター＋名前 */}
-          <div style={styles.footerMeInfo}>
-            {profile && (
+      {/* フッター: 下部固定・フロート */}
+      <div style={s.footer}>
+        <div style={s.footerMe}>
+          {/* アバターのみ（user name表示削除） */}
+          {profile && (
+            <img src={profile.pictureUrl} alt={profile.displayName} style={s.footerAvatar} />
+          )}
+          {/* テキスト: 右揃え */}
+          <div style={s.footerMeText}>
+            {isHima ? (
+              <p style={s.footerMeTextLine}>{profile?.displayName}さんはイマヒマ。しています。</p>
+            ) : (
               <>
-                <img
-                  src={profile.pictureUrl}
-                  alt={profile.displayName}
-                  style={styles.footerAvatar}
-                />
-                <p style={styles.footerAvatarName}>{profile.displayName}</p>
+                <p style={s.footerMeTextLine}>{profile?.displayName}さん！</p>
+                <p style={s.footerMeTextLine}>今の状況はどうですか？</p>
               </>
             )}
           </div>
-          {/* テキスト */}
-          <div style={styles.footerMeText}>
-            <p style={styles.footerMeTextLine}>{profile?.displayName}さん！</p>
-            <p style={styles.footerMeTextLine}>
-              {isHima ? "イマヒマ。しています。" : "今の状況はどうですか？"}
-            </p>
-          </div>
           {/* マスコット */}
-          <div style={styles.footerMascotCircle}>
+          <div style={s.footerMascotCircle}>
             <img
               src={isHima ? "/images/mascot-bear-hima.svg" : "/images/mascot-bear-nothima.svg"}
               alt="マスコット"
-              style={styles.footerMascotImg}
+              style={s.footerMascotImg}
             />
           </div>
         </div>
 
         {isHima ? (
-          <button onClick={turnOffHima} style={styles.footerBtnWhite}>
-            <span style={styles.footerBtnWhiteText}>ヒマじゃなくなった</span>
+          <button onClick={turnOffHima} style={s.footerBtnWhite}>
+            <span style={s.footerBtnDefaultText}>ヒマじゃなくなった</span>
           </button>
         ) : (
-          <button onClick={openSettings} style={styles.footerBtnWhite}>
-            <span style={styles.footerBtnGreenText}>イマヒマ。</span>
+          <button onClick={() => setStep("settings")} style={s.footerBtnWhite}>
+            <span style={s.footerBtnGreenText}>イマヒマ。</span>
           </button>
         )}
       </div>
@@ -350,63 +304,52 @@ export default function Home() {
   );
 }
 
-// --- Settings Screen (07-01) ---
+// --- Settings (07-01) ---
 function SettingsScreen({ friends, visibleTo, onSave, onBack }) {
   const [selected, setSelected] = useState(visibleTo);
 
   const toggleFriend = (userId) => {
     setSelected((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
   return (
-    <div style={styles.settingsScreen}>
-      {/* Header */}
-      <div style={styles.settingsHeader}>
-        <button onClick={onBack} style={styles.navBtn}>
-          <img src="/icons/arrow_back_ios_new.svg" alt="戻る" style={styles.iconImgGreen} />
+    <div style={s.settingsScreen}>
+      {/* ヘッダー: 上部固定 */}
+      <div style={s.settingsHeader}>
+        <button onClick={onBack} style={s.navBtn}>
+          <img src="/icons/arrow_back_ios_new.svg" alt="戻る" style={s.iconImgGreen} />
         </button>
-        <img src="/images/logo.svg" alt="イマヒマ。" style={styles.logoImg} />
-        <div style={styles.navBtn} />
+        <img src="/images/logo.svg" alt="イマヒマ。" style={s.logoImg} />
+        <div style={s.navBtn} />
       </div>
 
-      {/* Title */}
-      <div style={styles.settingsTitleArea}>
-        <p style={styles.settingsTitle}>暇状態の公開範囲を設定</p>
+      <div style={s.settingsHeaderSpacer} />
+
+      <div style={s.settingsTitleArea}>
+        <p style={s.settingsTitle}>暇状態の公開範囲を設定</p>
       </div>
 
-      {/* List */}
-      <div style={styles.settingsList}>
+      <div style={s.settingsList}>
         {friends.length === 0 ? (
-          <p style={styles.emptyText}>友達がまだいません</p>
+          <p style={s.emptyText}>友達がまだいません</p>
         ) : (
           friends.map((friend) => (
-            <div key={friend.userId} style={styles.settingsRow}>
-              <img
-                src={friend.pictureUrl}
-                alt={friend.displayName}
-                style={styles.friendAvatar}
-              />
-              <span style={styles.friendName}>{friend.displayName}</span>
-              {/* Toggle Switch */}
+            <div key={friend.userId} style={s.settingsRow}>
+              <img src={friend.pictureUrl} alt={friend.displayName} style={s.friendAvatar} />
+              <span style={s.friendName}>{friend.displayName}</span>
               <button
                 onClick={() => toggleFriend(friend.userId)}
                 style={{
-                  ...styles.toggle,
-                  backgroundColor: selected.includes(friend.userId)
-                    ? "#22c55e"
-                    : "#71717a",
+                  ...s.toggle,
+                  backgroundColor: selected.includes(friend.userId) ? "#22c55e" : "#71717a",
                 }}
               >
                 <div
                   style={{
-                    ...styles.toggleThumb,
-                    transform: selected.includes(friend.userId)
-                      ? "translateX(20px)"
-                      : "translateX(2px)",
+                    ...s.toggleThumb,
+                    transform: selected.includes(friend.userId) ? "translateX(20px)" : "translateX(2px)",
                   }}
                 />
               </button>
@@ -415,10 +358,10 @@ function SettingsScreen({ friends, visibleTo, onSave, onBack }) {
         )}
       </div>
 
-      {/* Footer button */}
-      <div style={styles.settingsFooter}>
-        <button onClick={() => onSave(selected)} style={styles.greenBtn}>
-          <span style={styles.greenBtnText}>暇状態を公開する</span>
+      {/* フッター: 下部固定 */}
+      <div style={s.settingsFooter}>
+        <button onClick={() => onSave(selected)} style={s.greenBtn}>
+          <span style={s.greenBtnText}>暇状態を公開する</span>
         </button>
       </div>
     </div>
@@ -428,17 +371,11 @@ function SettingsScreen({ friends, visibleTo, onSave, onBack }) {
 // --- Sub Components ---
 function FriendRow({ friend, actionLabel, onAction }) {
   return (
-    <div style={styles.friendRow}>
-      <img
-        src={friend.pictureUrl}
-        alt={friend.displayName}
-        style={styles.friendAvatar}
-      />
-      <span style={styles.friendName}>{friend.displayName}</span>
+    <div style={s.friendRow}>
+      <img src={friend.pictureUrl} alt={friend.displayName} style={s.friendAvatar} />
+      <span style={s.friendName}>{friend.displayName}</span>
       {actionLabel && (
-        <button onClick={onAction} style={styles.friendActionBtn}>
-          {actionLabel}
-        </button>
+        <button onClick={onAction} style={s.friendActionBtn}>{actionLabel}</button>
       )}
     </div>
   );
@@ -446,428 +383,125 @@ function FriendRow({ friend, actionLabel, onAction }) {
 
 function Toast({ message }) {
   return (
-    <div style={styles.toastWrapper}>
-      <div style={styles.toast}>
-        <p style={styles.toastText}>{message}</p>
+    <div style={s.toastWrapper}>
+      <div style={s.toast}>
+        <p style={s.toastText}>{message}</p>
       </div>
     </div>
   );
 }
 
-// --- Styles ---
-const fontBase = {
+// --- Design Tokens ---
+const font = {
   fontFamily: "'Noto Sans JP', sans-serif",
   fontSize: "16px",
   lineHeight: "1.75",
   letterSpacing: "0.48px",
 };
 
-const styles = {
-  // Loading
-  loadingScreen: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-    backgroundColor: "#fafafa",
-  },
-  loadingText: {
-    ...fontBase,
-    color: "#71717a",
-  },
+const HEADER_HEIGHT = 84;   // padding 20px × 2 + icon 44px
+const FOOTER_HEIGHT = 190;  // フッターの概算高さ
 
-  // Onboarding (03-01)
-  onboardingScreen: {
-    minHeight: "100vh",
-    backgroundColor: "#22c55e",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "stretch",
-    gap: "8px",
-  },
-  onboardingTitleArea: {
-    padding: "16px",
-  },
+const s = {
+  // Loading
+  loadingScreen: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", backgroundColor: "#fafafa" },
+  loadingText: { ...font, color: "#71717a" },
+
+  // Onboarding
+  onboardingScreen: { height: "100vh", backgroundColor: "#22c55e", display: "flex", flexDirection: "column", overflow: "hidden" },
+  onboardingTitleArea: { padding: "16px", flexShrink: 0 },
   onboardingTitle: {
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: "40px",
-    fontWeight: "600",
-    lineHeight: "1.5",
-    letterSpacing: "0.6px",
-    color: "#ffffff",
-    whiteSpace: "pre-wrap",
-    margin: 0,
+    fontFamily: "'Noto Sans JP', sans-serif", fontSize: "40px", fontWeight: "600",
+    lineHeight: "1.5", letterSpacing: "0.6px", color: "#ffffff", margin: 0,
   },
-  onboardingIllustArea: {
-    padding: "16px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  onboardingIllust: {
-    width: "320px",
-    height: "320px",
-    objectFit: "contain",
-  },
-  onboardingFooter: {
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    alignItems: "center",
-  },
+  onboardingIllustArea: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px", overflow: "hidden", minHeight: 0 },
+  onboardingIllust: { width: "100%", height: "100%", objectFit: "contain", maxWidth: "320px" },
+  onboardingFooter: { flexShrink: 0, padding: "16px", display: "flex", flexDirection: "column", gap: "16px" },
   onboardingBtnPrimary: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    border: "none",
-    borderRadius: "8px",
-    padding: "10px 16px",
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: "16px",
-    fontWeight: "500",
-    lineHeight: "1.75",
-    letterSpacing: "0.48px",
-    color: "#16a34a",
-    textAlign: "center",
-    cursor: "pointer",
+    width: "100%", backgroundColor: "#ffffff", border: "none", borderRadius: "8px", padding: "10px 16px",
+    fontFamily: "'Noto Sans JP', sans-serif", fontSize: "16px", fontWeight: "500", lineHeight: "1.75",
+    letterSpacing: "0.48px", color: "#16a34a", textAlign: "center", cursor: "pointer",
   },
   onboardingBtnOutline: {
-    width: "100%",
-    backgroundColor: "transparent",
-    border: "2px solid #fafafa",
-    borderRadius: "8px",
-    padding: "10px 16px",
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: "16px",
-    fontWeight: "500",
-    lineHeight: "1.75",
-    letterSpacing: "0.48px",
-    color: "#ffffff",
-    textAlign: "center",
-    cursor: "pointer",
+    width: "100%", backgroundColor: "transparent", border: "2px solid #fafafa", borderRadius: "8px", padding: "10px 16px",
+    fontFamily: "'Noto Sans JP', sans-serif", fontSize: "16px", fontWeight: "500", lineHeight: "1.75",
+    letterSpacing: "0.48px", color: "#ffffff", textAlign: "center", cursor: "pointer",
   },
-  onboardingNote: {
-    ...fontBase,
-    color: "#ffffff",
-    margin: 0,
-    width: "100%",
-  },
+  onboardingNote: { ...font, color: "#ffffff", margin: 0 },
 
-  // Main (05-01)
-  mainScreen: {
-    minHeight: "100vh",
-    backgroundColor: "#ffffff",
-    display: "flex",
-    flexDirection: "column",
-    position: "relative",
-  },
+  // Main
+  mainScreen: { height: "100vh", backgroundColor: "#ffffff", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" },
   mainHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "20px 16px",
+    position: "fixed", top: 0, left: 0, right: 0, zIndex: 10,
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "20px 16px", backgroundColor: "#ffffff",
   },
-  mainDivider: {
-    height: "1px",
-    backgroundColor: "#d4d4d8",
-    margin: "0",
-  },
+  mainHeaderSpacer: { height: HEADER_HEIGHT, flexShrink: 0 },
+  mainDivider: { height: "1px", backgroundColor: "#d4d4d8", flexShrink: 0 },
   mainList: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "32px",
+    flex: 1, overflowY: "auto", padding: "16px",
+    paddingBottom: `${FOOTER_HEIGHT + 16}px`,
+    display: "flex", flexDirection: "column", gap: "32px",
   },
 
-  // Logo
-  logoImg: {
-    height: "48px",
-    width: "auto",
-  },
+  logoImg: { height: "38px", width: "auto" }, // 48 × 0.8 = 38.4
+  navBtn: { width: "40px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", padding: "8px", background: "none", border: "none", cursor: "pointer", flexShrink: 0 },
+  iconImg: { width: "24px", height: "24px" },
+  iconImgGreen: { width: "24px", height: "24px", filter: "invert(48%) sepia(79%) saturate(476%) hue-rotate(86deg) brightness(118%) contrast(119%)" },
 
-  // Nav button
-  navBtn: {
-    width: "40px",
-    height: "44px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "8px",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-  iconImg: {
-    width: "24px",
-    height: "24px",
-  },
-  iconImgGreen: {
-    width: "24px",
-    height: "24px",
-    filter: "invert(48%) sepia(79%) saturate(476%) hue-rotate(86deg) brightness(118%) contrast(119%)",
-  },
+  friendSection: { display: "flex", flexDirection: "column", gap: "8px" },
+  sectionLabel: { ...font, fontWeight: "500", color: "#71717a", margin: 0 },
+  emptyText: { ...font, color: "#71717a", textAlign: "center", margin: 0, padding: "8px 0" },
+  friendRow: { display: "flex", alignItems: "center", gap: "8px", height: "54px", padding: "8px" },
+  friendAvatar: { width: "40px", height: "40px", borderRadius: "9999px", objectFit: "cover", flexShrink: 0 },
+  friendName: { ...font, color: "#27272a", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  friendActionBtn: { ...font, color: "#27272a", background: "none", border: "none", cursor: "pointer", padding: "10px 16px", flexShrink: 0 },
 
-  // Friend sections
-  friendSection: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  sectionLabel: {
-    ...fontBase,
-    fontWeight: "500",
-    color: "#71717a",
-    margin: 0,
-  },
-  emptyText: {
-    ...fontBase,
-    color: "#71717a",
-    textAlign: "center",
-    margin: 0,
-    padding: "8px 0",
-  },
-  friendRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    height: "54px",
-    padding: "8px",
-  },
-  friendAvatar: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "9999px",
-    objectFit: "cover",
-    flexShrink: 0,
-  },
-  friendName: {
-    ...fontBase,
-    color: "#27272a",
-    flex: 1,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  friendActionBtn: {
-    ...fontBase,
-    color: "#27272a",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    padding: "10px 16px",
-    flexShrink: 0,
-  },
+  inviteBtn: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "10px 32px 10px 16px", border: "2px solid #d4d4d8", borderRadius: "8px", backgroundColor: "#ffffff", cursor: "pointer" },
+  inviteBtnText: { ...font, fontWeight: "500", color: "#27272a" },
 
-  // Invite button
-  inviteBtn: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    padding: "10px 16px",
-    paddingLeft: "32px",
-    border: "2px solid #d4d4d8",
-    borderRadius: "8px",
-    backgroundColor: "#ffffff",
-    cursor: "pointer",
-  },
-  inviteBtnText: {
-    ...fontBase,
-    fontWeight: "500",
-    color: "#27272a",
-  },
+  // Toast: 1行表示
+  toastWrapper: { position: "fixed", top: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 50 },
+  toast: { backgroundColor: "#dcfce7", borderRadius: "8px", padding: "8px 12px", boxShadow: "0px 0px 32px 0px rgba(0,0,0,0.25)", whiteSpace: "nowrap" },
+  toastText: { ...font, color: "#15803d", textAlign: "center", margin: 0, whiteSpace: "nowrap" },
 
-  // Toast
-  toastWrapper: {
-    position: "fixed",
-    top: "24px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    zIndex: 50,
-  },
-  toast: {
-    backgroundColor: "#dcfce7",
-    borderRadius: "8px",
-    padding: "8px 12px",
-    boxShadow: "0px 0px 32px 0px rgba(0,0,0,0.25)",
-  },
-  toastText: {
-    ...fontBase,
-    color: "#15803d",
-    textAlign: "center",
-    margin: 0,
-  },
-
-  // Footer
+  // Footer: 下部固定・フロート
   footer: {
-    backgroundColor: "#22c55e",
-    borderTopLeftRadius: "24px",
-    borderTopRightRadius: "24px",
-    boxShadow: "0px 0px 24px 0px rgba(0,0,0,0.25)",
-    padding: "24px 16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    alignItems: "center",
+    position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 10,
+    backgroundColor: "#22c55e", borderTopLeftRadius: "24px", borderTopRightRadius: "24px",
+    boxShadow: "0px 0px 24px 0px rgba(0,0,0,0.25)", padding: "24px 16px",
+    display: "flex", flexDirection: "column", gap: "16px", alignItems: "center",
   },
-  footerMe: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "4px",
-    padding: "8px",
-    width: "100%",
-  },
-  footerMeInfo: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  footerAvatar: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "9999px",
-    objectFit: "cover",
-  },
-  footerAvatarName: {
-    ...fontBase,
-    color: "#ffffff",
-    margin: 0,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  footerMeText: {
-    display: "flex",
-    flexDirection: "column",
-    flex: 1,
-  },
-  footerMeTextLine: {
-    ...fontBase,
-    color: "#ffffff",
-    margin: 0,
-    whiteSpace: "nowrap",
-  },
-  footerMascotCircle: {
-    width: "81px",
-    height: "81px",
-    borderRadius: "9999px",
-    backgroundColor: "#e4e4e7",
-    overflow: "hidden",
-    flexShrink: 0,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footerMascotImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  footerBtnWhite: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    border: "none",
-    borderRadius: "8px",
-    padding: "10px 16px",
-    cursor: "pointer",
-    textAlign: "center",
-  },
-  footerBtnWhiteText: {
-    ...fontBase,
-    fontWeight: "500",
-    color: "#27272a",
-  },
-  footerBtnGreenText: {
-    ...fontBase,
-    fontWeight: "500",
-    color: "#16a34a",
-  },
+  footerMe: { display: "flex", alignItems: "center", gap: "8px", padding: "8px", width: "100%" },
+  footerAvatar: { width: "40px", height: "40px", borderRadius: "9999px", objectFit: "cover", flexShrink: 0 },
+  // テキスト: flex:1で右に寄せる
+  footerMeText: { display: "flex", flexDirection: "column", flex: 1, alignItems: "flex-end" },
+  footerMeTextLine: { ...font, color: "#ffffff", margin: 0, whiteSpace: "nowrap" },
+  footerMascotCircle: { width: "81px", height: "81px", borderRadius: "9999px", backgroundColor: "#e4e4e7", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
+  footerMascotImg: { width: "100%", height: "100%", objectFit: "cover" },
+  footerBtnWhite: { width: "100%", backgroundColor: "#ffffff", border: "none", borderRadius: "8px", padding: "10px 16px", cursor: "pointer", textAlign: "center" },
+  footerBtnDefaultText: { ...font, fontWeight: "500", color: "#27272a" },
+  footerBtnGreenText: { ...font, fontWeight: "500", color: "#16a34a" },
 
-  // Settings (07-01)
-  settingsScreen: {
-    minHeight: "100vh",
-    backgroundColor: "#ffffff",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
+  // Settings
+  settingsScreen: { height: "100vh", backgroundColor: "#ffffff", display: "flex", flexDirection: "column", overflow: "hidden" },
   settingsHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "20px 16px",
+    position: "fixed", top: 0, left: 0, right: 0, zIndex: 10,
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "20px 16px", backgroundColor: "#ffffff",
   },
-  settingsTitleArea: {
-    padding: "16px",
-  },
+  settingsHeaderSpacer: { height: HEADER_HEIGHT, flexShrink: 0 },
+  settingsTitleArea: { padding: "16px", flexShrink: 0 },
   settingsTitle: {
     fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: "40px",
-    fontWeight: "600",
-    lineHeight: "1.5",
-    letterSpacing: "0.6px",
-    color: "#27272a",
-    margin: 0,
-    whiteSpace: "pre-wrap",
+    fontSize: "24px", // 40px → 24px
+    fontWeight: "600", lineHeight: "1.5", letterSpacing: "0.6px", color: "#27272a", margin: 0,
   },
-  settingsList: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "16px",
-    borderTop: "2px solid #d4d4d8",
-    borderBottom: "2px solid #d4d4d8",
-    display: "flex",
-    flexDirection: "column",
-  },
-  settingsRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    height: "54px",
-    padding: "8px",
-  },
-  toggle: {
-    position: "relative",
-    width: "52px",
-    height: "32px",
-    borderRadius: "9999px",
-    border: "none",
-    cursor: "pointer",
-    flexShrink: 0,
-    transition: "background-color 0.2s",
-    padding: "2px 4px",
-  },
-  toggleThumb: {
-    position: "absolute",
-    top: "4px",
-    width: "24px",
-    height: "24px",
-    borderRadius: "9999px",
-    backgroundColor: "#ffffff",
-    transition: "transform 0.2s",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-  },
-  settingsFooter: {
-    padding: "16px",
-  },
-  greenBtn: {
-    width: "100%",
-    backgroundColor: "#22c55e",
-    border: "none",
-    borderRadius: "8px",
-    padding: "10px 16px",
-    cursor: "pointer",
-    textAlign: "center",
-  },
-  greenBtnText: {
-    ...fontBase,
-    fontWeight: "500",
-    color: "#fafafa",
-  },
+  settingsList: { flex: 1, overflowY: "auto", padding: "16px", paddingBottom: "100px", borderTop: "2px solid #d4d4d8", display: "flex", flexDirection: "column" },
+  settingsRow: { display: "flex", alignItems: "center", gap: "8px", height: "54px", padding: "8px" },
+  toggle: { position: "relative", width: "52px", height: "32px", borderRadius: "9999px", border: "none", cursor: "pointer", flexShrink: 0, transition: "background-color 0.2s", padding: "2px 4px" },
+  toggleThumb: { position: "absolute", top: "4px", width: "24px", height: "24px", borderRadius: "9999px", backgroundColor: "#ffffff", transition: "transform 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" },
+  settingsFooter: { position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 10, padding: "16px", backgroundColor: "#ffffff" },
+  greenBtn: { width: "100%", backgroundColor: "#22c55e", border: "none", borderRadius: "8px", padding: "10px 16px", cursor: "pointer", textAlign: "center" },
+  greenBtnText: { ...font, fontWeight: "500", color: "#fafafa" },
 };
