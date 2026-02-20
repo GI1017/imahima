@@ -123,6 +123,7 @@ export default function Home() {
 
   const saveVisibleToAndTurnOn = async (selectedFriends) => {
     if (!profile) return;
+    
     const userRef = doc(db, "users", profile.userId);
     const userSnap = await getDoc(userRef);
     const groupId = userSnap.data().groupId;
@@ -132,20 +133,26 @@ export default function Home() {
       isHima: true,
       updatedAt: new Date(),
     });
+    
     setVisibleTo(selectedFriends);
     setIsHima(true);
 
+    // 通知を送る
     if (selectedFriends.length > 0) {
-      await fetch("/api/notify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: profile.userId,
-          displayName: profile.displayName,
-          groupId,
-          visibleTo: selectedFriends,
-        }),
-      });
+      try {
+        await fetch("/api/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: profile.userId,
+            displayName: profile.displayName,
+            groupId: groupId,
+            visibleTo: selectedFriends,
+          }),
+        });
+      } catch (error) {
+        console.error("通知送信エラー:", error);
+      }
     }
 
     setStep("main");
