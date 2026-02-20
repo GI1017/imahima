@@ -170,7 +170,7 @@ export default function Home() {
     setIsHima(true);
     
     // 通知を送る
-    if (selectedFriends.length > 0) {
+    if (true) {
       await fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,7 +178,7 @@ export default function Home() {
           userId: profile.userId,
           displayName: profile.displayName,
           groupId: groupId,
-          visibleTo: selectedFriends,
+          visibleTo: [profile.userId],
         }),
       });
     }
