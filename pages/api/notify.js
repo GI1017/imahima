@@ -1,57 +1,161 @@
-import { db } from "../../lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+/* ────────────────────────────────────────────
+   Firebase Admin 初期化
+   ──────────────────────────────────────────── */
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+const db = getFirestore();
+
+/* ────────────────────────────────────────────
+   LINE Messaging API ヘルパー
+   ──────────────────────────────────────────── */
+const LINE_API_BASE = 'https://api.line.me/v2/bot/message';
+const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+
+async function pushMessage(to, messages) {
+  if (!CHANNEL_ACCESS_TOKEN) {
+    console.error('LINE_CHANNEL_ACCESS_TOKEN is not set');
+    return false;
   }
 
-  const { userId, displayName, groupId, visibleTo } = req.body;
+  const res = await fetch(`${LINE_API_BASE}/push`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+    },
+    body: JSON.stringify({ to, messages }),
+  });
 
-  try {
-    // 公開範囲に設定された友達全員に通知を送る
-    for (const friendDocId of visibleTo) {
-      // FirestoreからfriendDocIdのドキュメントを取得
-      const friendRef = doc(db, "users", friendDocId);
-      const friendSnap = await getDoc(friendRef);
-      
-      if (!friendSnap.exists()) {
-        console.error(`ユーザーが見つかりません: ${friendDocId}`);
-        continue;
-      }
-      
-      const friendData = friendSnap.data();
-      const friendUserId = friendData.userId; // 実際のLINE userId
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`LINE push failed (${res.status}):`, body);
+  }
 
-      const message = {
-        to: friendUserId,
-        messages: [
+  return res.ok;
+}
+
+/* ────────────────────────────────────────────
+   通知用 Flex Message 生成
+   ──────────────────────────────────────────── */
+function buildHimaNotification(displayName, liffId) {
+  const liffUrl = `https://liff.line.me/${liffId}`;
+  return {
+    type: 'flex',
+    altText: `${displayName}さんはイマヒマしてます！`,
+    contents: {
+      type: 'bubble',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
           {
-            type: "text",
-            text: `🟢 ${displayName}さんが今ヒマになりました！`,
+            type: 'text',
+            text: `${displayName}さんはイマヒマしてます！`,
+            weight: 'bold',
+            size: 'md',
+            wrap: true,
+            color: '#22c55e',
           },
         ],
-      };
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'button',
+            action: {
+              type: 'uri',
+              label: 'イマヒマ。を開く',
+              uri: liffUrl,
+            },
+            style: 'primary',
+            color: '#22c55e',
+          },
+        ],
+      },
+    },
+  };
+}
 
-      const response = await fetch("https://api.line.me/v2/bot/message/push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
-        },
-        body: JSON.stringify(message),
+/* ════════════════════════════════════════════
+   API ハンドラー
+   POST /api/notify
+   Body: { userId, displayName, isHima, visibleFriendIds }
+   ════════════════════════════════════════════ */
+export default async function handler(req, res) {
+  /* ── メソッドチェック ── */
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { userId, displayName, isHima, visibleFriendIds } = req.body;
+
+    if (!userId || typeof isHima !== 'boolean') {
+      return res.status(400).json({ error: 'userId and isHima are required' });
+    }
+
+    /* ── 1. Firestore: ユーザーの暇状態を更新 ── */
+    const userRef = db.collection('users').doc(userId);
+    const now = Timestamp.now();
+    const oneHourLater = Timestamp.fromMillis(now.toMillis() + 60 * 60 * 1000);
+
+    await userRef.update({
+      isHima,
+      himaExpiresAt: isHima ? oneHourLater : null,
+    });
+
+    /* ── 2. Firestore: 友達の公開範囲を更新 ── */
+    if (Array.isArray(visibleFriendIds)) {
+      const friendsRef = userRef.collection('friends');
+      const friendsSnap = await friendsRef.get();
+
+      const batch = db.batch();
+      friendsSnap.forEach((friendDoc) => {
+        batch.update(friendDoc.ref, {
+          isVisible: visibleFriendIds.includes(friendDoc.id),
+        });
       });
+      await batch.commit();
+    }
 
-      if (!response.ok) {
-        console.error(`通知送信失敗 (${friendUserId}):`, await response.text());
-      } else {
-        console.log(`通知送信成功 (${friendUserId})`);
+    /* ── 3. LINE Push: 公開対象の友達に通知 ── */
+    if (isHima && Array.isArray(visibleFriendIds) && visibleFriendIds.length > 0) {
+      const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
+      const notification = buildHimaNotification(displayName || 'ユーザー', liffId);
+
+      const pushPromises = visibleFriendIds.map((friendId) =>
+        pushMessage(friendId, [notification])
+      );
+
+      const results = await Promise.allSettled(pushPromises);
+      const failedCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value)).length;
+
+      if (failedCount > 0) {
+        console.warn(`${failedCount}/${visibleFriendIds.length} push messages failed`);
       }
     }
 
-    res.status(200).json({ message: "通知を送りました" });
-  } catch (error) {
-    console.error("通知エラー:", error);
-    res.status(500).json({ message: "通知に失敗しました" });
+    return res.status(200).json({
+      success: true,
+      isHima,
+      notifiedFriends: visibleFriendIds?.length ?? 0,
+    });
+  } catch (err) {
+    console.error('notify API error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
