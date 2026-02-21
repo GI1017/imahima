@@ -683,21 +683,69 @@ export default function Home() {
         const profile = await liff.getProfile();
         profileRef.current = profile;
 
-        // コンテキスト判定: トークルーム内ならトークルーム画面へ
-        try {
-          const context = liff.getContext();
-          if (context && (context.type === 'utou' || context.type === 'group' || context.type === 'room')) {
-            setUser({
-              userId: profile.userId,
-              displayName: profile.displayName,
-              pictureUrl: profile.pictureUrl ?? '',
-              isHima: false,
-            });
-            setView('talkroom');
-            return;
+        // ?action=share の場合、shareTargetPickerを自動起動してLIFFを閉じる
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('action') === 'share') {
+          const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
+          const liffUrl = `https://liff.line.me/${liffId}?inviter=${profile.userId}`;
+
+          if (liff.isApiAvailable('shareTargetPicker')) {
+            try {
+              await liff.shareTargetPicker([
+                {
+                  type: 'flex',
+                  altText: 'イマヒマ。への招待',
+                  contents: {
+                    type: 'bubble',
+                    body: {
+                      type: 'box',
+                      layout: 'vertical',
+                      contents: [
+                        {
+                          type: 'image',
+                          url: `${window.location.origin}/images/logo.png`,
+                          size: 'md',
+                          aspectRatio: '4:1',
+                          aspectMode: 'fit',
+                          align: 'start',
+                        },
+                        {
+                          type: 'text',
+                          text: `${profile.displayName}さんがイマヒマ。に招待しています`,
+                          margin: 'md',
+                          size: 'sm',
+                          wrap: true,
+                        },
+                      ],
+                    },
+                    footer: {
+                      type: 'box',
+                      layout: 'vertical',
+                      contents: [
+                        {
+                          type: 'button',
+                          action: {
+                            type: 'uri',
+                            label: 'イマヒマ。を始める',
+                            uri: liffUrl,
+                          },
+                          style: 'primary',
+                          color: '#22c55e',
+                        },
+                      ],
+                    },
+                  },
+                },
+              ]);
+            } catch (shareErr) {
+              console.error('Share from rich menu error:', shareErr);
+            }
           }
-        } catch (ctxErr) {
-          console.warn('Context check failed, proceeding normally:', ctxErr);
+          // shareTargetPicker完了後、LIFFを閉じる
+          if (liff.isApiAvailable('closeWindow')) {
+            liff.closeWindow();
+          }
+          return;
         }
 
         await loadUserData(profile.userId, profile);
