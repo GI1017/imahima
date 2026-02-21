@@ -46,46 +46,13 @@ async function pushMessage(to, messages) {
 }
 
 /* ────────────────────────────────────────────
-   通知用 Flex Message 生成
+   通知メッセージ生成
    ──────────────────────────────────────────── */
 function buildHimaNotification(displayName, liffId) {
   const liffUrl = `https://liff.line.me/${liffId}`;
   return {
-    type: 'flex',
-    altText: `${displayName}さんはイマヒマしてます！`,
-    contents: {
-      type: 'bubble',
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          {
-            type: 'text',
-            text: `${displayName}さんはイマヒマしてます！`,
-            weight: 'bold',
-            size: 'md',
-            wrap: true,
-            color: '#22c55e',
-          },
-        ],
-      },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          {
-            type: 'button',
-            action: {
-              type: 'uri',
-              label: 'イマヒマ。を開く',
-              uri: liffUrl,
-            },
-            style: 'primary',
-            color: '#22c55e',
-          },
-        ],
-      },
-    },
+    type: 'text',
+    text: `${displayName}さんはイマヒマしてます！\n\nイマヒマ。を開く▼\n${liffUrl}`,
   };
 }
 
@@ -137,15 +104,10 @@ export default async function handler(req, res) {
       const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
       const name = displayName || 'ユーザー';
 
-      // デバッグ: 送信先とメッセージ形式をログ出力
-      console.log(`[DEBUG] Self push to userId: "${userId}"`);
-      console.log(`[DEBUG] LIFF ID: "${liffId}"`);
-
-      // まずシンプルなテキストメッセージで確認
-      const selfResult = await pushMessage(userId, [
-        { type: 'text', text: `${name}さんはイマヒマしてます！` },
+      // 自分のボットとのトークルームに通知
+      await pushMessage(userId, [
+        buildHimaNotification(name, liffId),
       ]);
-      console.log(`[DEBUG] Self push result: ${selfResult}`);
 
       /* ── 4. LINE Push: 公開対象の友達に通知 ── */
       if (Array.isArray(visibleFriendIds) && visibleFriendIds.length > 0) {
