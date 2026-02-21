@@ -741,8 +741,10 @@ export default function Home() {
               console.error('Share from rich menu error:', shareErr);
             }
           }
-          // shareTargetPicker完了後、トークルームに戻る（v2）
-          window.location.href = 'https://line.me/R/nv/chat';
+          // shareTargetPicker完了後、LIFFを閉じてトークルームに戻る
+          if (liff.isApiAvailable('closeWindow')) {
+            liff.closeWindow();
+          }
           return;
         }
 
