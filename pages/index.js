@@ -88,14 +88,22 @@ function Toast({ message, visible }) {
 /* ────────────────────────────────────────────
    Header コンポーネント
    ──────────────────────────────────────────── */
-function Header({ onBack, showLogo = true }) {
+function Header({ onBack, onClose, showLogo = true }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '20px 16px', width: '100%', boxSizing: 'border-box',
     }}>
       <div style={{ width: 40, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {onBack && (
+        {onClose && (
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <img src="/icons/close.svg" alt="閉じる" width={24} height={24} />
+          </button>
+        )}
+        {onBack && !onClose && (
           <button onClick={onBack} style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -108,6 +116,97 @@ function Header({ onBack, showLogo = true }) {
         <img src="/images/logo.svg" alt="イマヒマ。" style={{ height: 48 }} />
       )}
       <div style={{ width: 40, height: 44 }} />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
+   04-01 トークルーム画面
+   ──────────────────────────────────────────── */
+function TalkRoomScreen({ onShare, onGoToTop }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', minHeight: '100dvh',
+      backgroundColor: c.white,
+    }}>
+      {/* ヘッダー */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '20px 16px', width: '100%', boxSizing: 'border-box',
+      }}>
+        <div style={{ width: 40, height: 44 }} />
+        <p style={{
+          margin: 0, fontFamily: font, fontWeight: 400, fontSize: 24,
+          lineHeight: 1.67, letterSpacing: 0.6, color: c.gray800,
+          textAlign: 'center',
+        }}>
+          イマヒマ。
+        </p>
+        <div style={{ width: 40, height: 44 }} />
+      </div>
+
+      {/* トーク本文 */}
+      <div style={{
+        flex: 1, padding: 16, display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={{ paddingRight: 24 }}>
+          <div style={{
+            border: `1px solid ${c.gray200}`, padding: '4px 8px',
+          }}>
+            <p style={{
+              margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
+              lineHeight: 1.75, letterSpacing: 0.48, color: c.gray800,
+            }}>
+              イマヒマ。に登録いただきありがとうございます！{'\n'}
+              下のメニューから友達と暇な状況をシェアしてください！
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* フッター: 2カラムグリッド */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        gap: 16, padding: 16,
+      }}>
+        {/* イマヒマ。をシェア */}
+        <button onClick={onShare} style={{
+          backgroundColor: c.gray50, border: `2px solid ${c.gray300}`,
+          borderRadius: 8, padding: '10px 12px', cursor: 'pointer',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', gap: 8, height: 92,
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 5L12 1L8 5" stroke={c.gray800} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 1V15" stroke={c.gray800} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M6 9H4C3.44772 9 3 9.44772 3 10V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V10C21 9.44772 20.5523 9 20 9H18" stroke={c.gray800} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <p style={{
+            margin: 0, fontFamily: font, fontWeight: 500, fontSize: 16,
+            lineHeight: 1.75, letterSpacing: 0.48, color: c.gray800,
+            textAlign: 'center',
+          }}>
+            イマヒマ。をシェア
+          </p>
+        </button>
+
+        {/* アプリTOPへ */}
+        <button onClick={onGoToTop} style={{
+          backgroundColor: c.green500, border: 'none',
+          borderRadius: 8, padding: '10px 16px', cursor: 'pointer',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', gap: 8,
+        }}>
+          <img src="/images/logo.svg" alt="イマヒマ。" style={{ height: 48 }} />
+          <p style={{
+            margin: 0, fontFamily: font, fontWeight: 500, fontSize: 16,
+            lineHeight: 1.75, letterSpacing: 0.48, color: c.gray50,
+            textAlign: 'center',
+          }}>
+            アプリTOPへ
+          </p>
+        </button>
+      </div>
     </div>
   );
 }
@@ -173,18 +272,20 @@ function OnboardingScreen({ onSelect }) {
 }
 
 /* ────────────────────────────────────────────
-   05-01 TOP画面
+   05-01/05-03 TOP画面
    ──────────────────────────────────────────── */
-function TopScreen({ user, friends, onInvite, onGoToSettings, toast }) {
+function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, onClose, toast }) {
   const himaFriends = friends.filter(f => f.isHima);
   const nonHimaFriends = friends.filter(f => !f.isHima);
+  const isHima = user?.isHima;
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', minHeight: '100dvh',
       backgroundColor: c.white, position: 'relative',
     }}>
-      <Header />
+      {/* ヘッダー: ヒマ時は×ボタン表示 */}
+      <Header onClose={isHima ? onClose : undefined} />
 
       {/* 友達リスト */}
       <div style={{
@@ -250,7 +351,7 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, toast }) {
         </button>
       </div>
 
-      {/* フッター */}
+      {/* フッター: isHima で状態分岐 */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         backgroundColor: c.green500,
@@ -266,38 +367,63 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, toast }) {
           width: '100%', padding: 8,
         }}>
           <div style={{
-            width: 40, height: 40, borderRadius: '50%', overflow: 'hidden',
+            width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
-            {user?.pictureUrl ? (
-              <img src={user.pictureUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', backgroundColor: c.gray200 }} />
-            )}
+            <div style={{
+              width: 40, height: 40, borderRadius: '50%', overflow: 'hidden',
+            }}>
+              {user?.pictureUrl ? (
+                <img src={user.pictureUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', backgroundColor: c.gray200 }} />
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ textAlign: 'right' }}>
-              <p style={{
-                margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
-                lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
-                whiteSpace: 'nowrap',
-              }}>
-                {user?.displayName ?? ''}さん！
-              </p>
-              <p style={{
-                margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
-                lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
-                whiteSpace: 'nowrap',
-              }}>
-                今の状況はどうですか？
-              </p>
+              {isHima ? (
+                <>
+                  <p style={{
+                    margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
+                    lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {user?.displayName ?? ''}さんは
+                  </p>
+                  <p style={{
+                    margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
+                    lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    イマヒマしています！
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p style={{
+                    margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
+                    lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {user?.displayName ?? ''}さん！
+                  </p>
+                  <p style={{
+                    margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
+                    lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    今の状況はどうですか？
+                  </p>
+                </>
+              )}
             </div>
             <div style={{
               width: 81, height: 81, borderRadius: '50%', overflow: 'hidden',
               backgroundColor: c.gray200, flexShrink: 0,
             }}>
               <img
-                src={user?.isHima ? '/images/mascot-bear-hima.svg' : '/images/mascot-bear-nothima.svg'}
+                src={isHima ? '/images/mascot-bear-hima.svg' : '/images/mascot-bear-nothima.svg'}
                 alt=""
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -305,13 +431,22 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, toast }) {
           </div>
         </div>
 
-        {/* イマヒマ。ボタン */}
-        <button onClick={onGoToSettings} style={{
-          ...baseBtn,
-          backgroundColor: c.white, color: c.green600,
-        }}>
-          イマヒマ。
-        </button>
+        {/* ボタン: isHima で切り替え */}
+        {isHima ? (
+          <button onClick={onStopHima} style={{
+            ...baseBtn,
+            backgroundColor: c.white, color: c.gray800,
+          }}>
+            ヒマじゃなくなった。
+          </button>
+        ) : (
+          <button onClick={onGoToSettings} style={{
+            ...baseBtn,
+            backgroundColor: c.white, color: c.green600,
+          }}>
+            イマヒマ。
+          </button>
+        )}
       </div>
 
       {/* Toast */}
@@ -355,11 +490,13 @@ function FriendRow({ friend, isHima = false }) {
       </p>
       {isHima && (
         <button onClick={handleTap} style={{
-          ...baseBtn, width: 'auto', padding: '10px 16px',
-          backgroundColor: 'transparent', color: c.gray800,
-          border: 'none', fontSize: 16,
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '10px 16px',
+          fontFamily: font, fontWeight: 500, fontSize: 16,
+          lineHeight: 1.75, letterSpacing: 0.48,
+          color: c.gray800, textDecoration: 'underline',
         }}>
-          次へ
+          トークする
         </button>
       )}
     </div>
@@ -525,7 +662,7 @@ function ScreenTransition({ children, direction }) {
    メインページコンポーネント
    ════════════════════════════════════════════ */
 export default function Home() {
-  const [view, setView] = useState('loading');       // loading | onboarding | top | settings
+  const [view, setView] = useState('loading');       // loading | talkroom | onboarding | top | settings
   const [prevView, setPrevView] = useState(null);
   const [user, setUser] = useState(null);
   const [friends, setFriends] = useState([]);
@@ -545,6 +682,23 @@ export default function Home() {
 
         const profile = await liff.getProfile();
         profileRef.current = profile;
+
+        // コンテキスト判定: トークルーム内ならトークルーム画面へ
+        try {
+          const context = liff.getContext();
+          if (context && (context.type === 'utou' || context.type === 'group' || context.type === 'room')) {
+            setUser({
+              userId: profile.userId,
+              displayName: profile.displayName,
+              pictureUrl: profile.pictureUrl ?? '',
+              isHima: false,
+            });
+            setView('talkroom');
+            return;
+          }
+        } catch (ctxErr) {
+          console.warn('Context check failed, proceeding normally:', ctxErr);
+        }
 
         await loadUserData(profile.userId, profile);
       } catch (err) {
@@ -696,7 +850,15 @@ export default function Home() {
       return;
     }
 
-    const liffUrl = `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}?inviter=${user.userId}`;
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
+    const userId = user?.userId ?? profileRef.current?.userId;
+    const liffUrl = `https://liff.line.me/${liffId}?inviter=${userId}`;
+
+    // ロゴ画像URL（Vercelデプロイ先ドメインから取得）
+    // ※ LINE Flex MessageはJPEG/PNGのみ対応。SVGで動かない場合はPNGに変換してください
+    const logoUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/images/logo.png`
+      : `https://liff.line.me/${liffId}/images/logo.png`;
 
     try {
       const result = await liff.shareTargetPicker([
@@ -710,15 +872,16 @@ export default function Home() {
               layout: 'vertical',
               contents: [
                 {
-                  type: 'text',
-                  text: 'イマヒマ。',
-                  weight: 'bold',
-                  size: 'xl',
-                  color: c.green500,
+                  type: 'image',
+                  url: logoUrl,
+                  size: 'md',
+                  aspectRatio: '4:1',
+                  aspectMode: 'fit',
+                  align: 'start',
                 },
                 {
                   type: 'text',
-                  text: `${user.displayName}さんがイマヒマ。に招待しています`,
+                  text: `${user?.displayName ?? '友達'}さんがイマヒマ。に招待しています`,
                   margin: 'md',
                   size: 'sm',
                   wrap: true,
@@ -784,6 +947,36 @@ export default function Home() {
     }
   }
 
+  /* ── ヒマじゃなくなった ── */
+  async function handleStopHima() {
+    try {
+      await updateDoc(doc(db, 'users', user.userId), {
+        isHima: false,
+        himaExpiresAt: null,
+      });
+      setUser(prev => ({ ...prev, isHima: false }));
+      showToast('ヒマじゃなくなりました。');
+    } catch (err) {
+      console.error('Stop hima error:', err);
+      alert('エラーが発生しました。もう一度お試しください。');
+    }
+  }
+
+  /* ── LIFFを閉じる ── */
+  function handleClose() {
+    if (liff.isApiAvailable('closeWindow')) {
+      liff.closeWindow();
+    }
+  }
+
+  /* ── トークルームからアプリTOPへ遷移 ── */
+  async function handleGoToTopFromTalkRoom() {
+    const profile = profileRef.current;
+    if (profile) {
+      await loadUserData(profile.userId, profile);
+    }
+  }
+
   /* ── Toast 表示 ── */
   function showToast(message) {
     setToast({ message, visible: true });
@@ -816,6 +1009,13 @@ export default function Home() {
       <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', overflow: 'hidden' }}>
         {view === 'loading' && <LoadingScreen />}
 
+        {view === 'talkroom' && (
+          <TalkRoomScreen
+            onShare={handleInviteFriends}
+            onGoToTop={handleGoToTopFromTalkRoom}
+          />
+        )}
+
         {view === 'onboarding' && (
           <OnboardingScreen onSelect={handleOnboardingSelect} />
         )}
@@ -826,6 +1026,8 @@ export default function Home() {
             friends={friends}
             onInvite={handleInviteFriends}
             onGoToSettings={() => navigateTo('settings')}
+            onStopHima={handleStopHima}
+            onClose={handleClose}
             toast={toast}
           />
         )}
