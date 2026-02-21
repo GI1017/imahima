@@ -741,10 +741,14 @@ export default function Home() {
               console.error('Share from rich menu error:', shareErr);
             }
           }
-          // shareTargetPicker完了後、LIFFを閉じる
-          if (liff.isApiAvailable('closeWindow')) {
-            liff.closeWindow();
-          }
+          // shareTargetPicker完了後、LIFFを閉じてトークルームに戻る
+          setTimeout(() => {
+            if (liff.isApiAvailable('closeWindow')) {
+              liff.closeWindow();
+            }
+          }, 300);
+          // closeWindowが効かない場合に備えて閉じるボタン画面を表示
+          setView('closePrompt');
           return;
         }
 
@@ -1056,6 +1060,29 @@ export default function Home() {
 
       <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', overflow: 'hidden' }}>
         {view === 'loading' && <LoadingScreen />}
+
+        {view === 'closePrompt' && (
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            minHeight: '100dvh', backgroundColor: c.white, gap: 16, padding: 16,
+          }}>
+            <p style={{
+              margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
+              lineHeight: 1.75, color: c.gray500, textAlign: 'center',
+            }}>
+              トークルームに戻るには下のボタンを押してください
+            </p>
+            <button onClick={() => {
+              if (liff.isApiAvailable('closeWindow')) liff.closeWindow();
+            }} style={{
+              ...baseBtn, width: 'auto', padding: '10px 32px',
+              backgroundColor: c.green500, color: c.white,
+            }}>
+              閉じる
+            </button>
+          </div>
+        )}
 
         {view === 'talkroom' && (
           <TalkRoomScreen
