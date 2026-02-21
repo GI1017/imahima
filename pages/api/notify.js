@@ -132,27 +132,43 @@ export default async function handler(req, res) {
       await batch.commit();
     }
 
-    /* ── 3. LINE Push: 公開対象の友達に通知 ── */
-    if (isHima && Array.isArray(visibleFriendIds) && visibleFriendIds.length > 0) {
+    /* ── 3. LINE Push: 自分のトークルームに通知 ── */
+    if (isHima) {
       const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-      const notification = buildHimaNotification(displayName || 'ユーザー', liffId);
+      const name = displayName || 'ユーザー';
 
-      const pushPromises = visibleFriendIds.map((friendId) =>
-        pushMessage(friendId, [notification])
-      );
+      // デバッグ: 送信先とメッセージ形式をログ出力
+      console.log(`[DEBUG] Self push to userId: "${userId}"`);
+      console.log(`[DEBUG] LIFF ID: "${liffId}"`);
 
-      const results = await Promise.allSettled(pushPromises);
-      const failedCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value)).length;
+      // まずシンプルなテキストメッセージで確認
+      const selfResult = await pushMessage(userId, [
+        { type: 'text', text: `${name}さんはイマヒマしてます！` },
+      ]);
+      console.log(`[DEBUG] Self push result: ${selfResult}`);
 
-      if (failedCount > 0) {
-        console.warn(`${failedCount}/${visibleFriendIds.length} push messages failed`);
+      /* ── 4. LINE Push: 公開対象の友達に通知 ── */
+      if (Array.isArray(visibleFriendIds) && visibleFriendIds.length > 0) {
+        const notification = buildHimaNotification(name, liffId);
+
+        const pushPromises = visibleFriendIds.map((friendId) =>
+          pushMessage(friendId, [notification])
+        );
+
+        const results = await Promise.allSettled(pushPromises);
+        const failedCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value)).length;
+
+        if (failedCount > 0) {
+          console.warn(`${failedCount}/${visibleFriendIds.length} friend push messages failed`);
+        }
       }
     }
 
     return res.status(200).json({
       success: true,
       isHima,
-      notifiedFriends: visibleFriendIds?.length ?? 0,
+      notifiedSelf: isHima,
+      notifiedFriends: isHima ? (visibleFriendIds?.length ?? 0) : 0,
     });
   } catch (err) {
     console.error('notify API error:', err);
