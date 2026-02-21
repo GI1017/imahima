@@ -742,13 +742,9 @@ export default function Home() {
             }
           }
           // shareTargetPicker完了後、LIFFを閉じてトークルームに戻る
-          setTimeout(() => {
-            if (liff.isApiAvailable('closeWindow')) {
-              liff.closeWindow();
-            }
-          }, 300);
-          // closeWindowが効かない場合に備えて閉じるボタン画面を表示
-          setView('closePrompt');
+          if (liff.isApiAvailable('closeWindow')) {
+            liff.closeWindow();
+          }
           return;
         }
 
