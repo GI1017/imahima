@@ -218,7 +218,7 @@ function OnboardingScreen({ onSelect }) {
 /* ────────────────────────────────────────────
    05-01/05-03 TOP画面
    ──────────────────────────────────────────── */
-function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, toast }) {
+function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, onPoke, toast }) {
   const himaFriends = friends.filter(f => f.isHima);
   const nonHimaFriends = friends.filter(f => !f.isHima);
   const isHima = user?.isHima;
@@ -255,7 +255,7 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, toast 
             </p>
           ) : (
             himaFriends.map(f => (
-              <FriendRow key={f.userId} friend={f} isHima />
+              <FriendRow key={f.userId} friend={f} isHima onPoke={onPoke} />
             ))
           )}
         </div>
@@ -403,16 +403,7 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, toast 
 /* ────────────────────────────────────────────
    FriendRow コンポーネント
    ──────────────────────────────────────────── */
-function FriendRow({ friend, isHima = false }) {
-  const handleTap = () => {
-    if (liff.isApiAvailable('openWindow')) {
-      liff.openWindow({
-        url: `https://line.me/R/oaMessage/${friend.userId}`,
-        external: true,
-      });
-    }
-  };
-
+function FriendRow({ friend, isHima = false, onPoke }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8,
@@ -434,14 +425,14 @@ function FriendRow({ friend, isHima = false }) {
         {friend.displayName}
       </p>
       {isHima && (
-        <button onClick={handleTap} style={{
+        <button onClick={() => onPoke?.(friend)} style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          padding: '10px 16px',
+          padding: '10px 16px', width: 175, textAlign: 'center',
           fontFamily: font, fontWeight: 500, fontSize: 16,
           lineHeight: 1.75, letterSpacing: 0.48,
-          color: c.gray800, textDecoration: 'underline',
+          color: c.gray800,
         }}>
-          トークする
+          声をかける
         </button>
       )}
     </div>
@@ -892,6 +883,29 @@ export default function Home() {
     }
   }
 
+  /* ── 声をかける（poke） ── */
+  async function handlePoke(friend) {
+    const ok = window.confirm(`${friend.displayName}さんにイマヒマを通知しますか？`);
+    if (!ok) return;
+
+    try {
+      const res = await fetch('/api/poke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromDisplayName: user.displayName,
+          toUserId: friend.userId,
+        }),
+      });
+
+      if (!res.ok) throw new Error('poke API failed');
+      showToast(`${friend.displayName}さんに通知しました。`);
+    } catch (err) {
+      console.error('Poke error:', err);
+      alert('通知に失敗しました。もう一度お試しください。');
+    }
+  }
+
   /* ── LIFFを閉じる ── */
   function handleClose() {
     if (liff.isApiAvailable('closeWindow')) {
@@ -942,6 +956,7 @@ export default function Home() {
             onInvite={handleInviteFriends}
             onGoToSettings={() => navigateTo('settings')}
             onStopHima={handleStopHima}
+            onPoke={handlePoke}
             toast={toast}
           />
         )}
