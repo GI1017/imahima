@@ -159,11 +159,11 @@ function Header({ onBack, onClose, showLogo = true }) {
 function OnboardingScreen({ onSelect }) {
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', minHeight: '100dvh',
-      backgroundColor: c.green500, position: 'relative',
+      display: 'flex', flexDirection: 'column', height: '100dvh',
+      backgroundColor: c.green500, overflow: 'hidden',
     }}>
       {/* タイトル */}
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: 16, flexShrink: 0 }}>
         <p style={{
           margin: 0, fontFamily: font, fontWeight: 600, fontSize: 40,
           lineHeight: 1.5, letterSpacing: 0.6, color: c.white,
@@ -172,22 +172,23 @@ function OnboardingScreen({ onSelect }) {
         </p>
       </div>
 
-      {/* イラスト */}
+      {/* イラスト（フレキシブル） */}
       <div style={{
-        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flex: 1, minHeight: 0, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
         padding: 16,
       }}>
         <img
           src="/images/onboarding-bears.svg"
           alt="シロクマ"
-          style={{ width: 320, height: 320, objectFit: 'contain' }}
+          style={{ maxWidth: 320, maxHeight: '100%', objectFit: 'contain' }}
         />
       </div>
 
-      {/* フッター */}
+      {/* フッター（下部固定） */}
       <div style={{
-        padding: 16, display: 'flex', flexDirection: 'column',
-        gap: 16, alignItems: 'center',
+        padding: '16px 16px 32px', display: 'flex', flexDirection: 'column',
+        gap: 16, alignItems: 'center', flexShrink: 0,
       }}>
         <button onClick={() => onSelect(true)} style={{
           ...baseBtn,
