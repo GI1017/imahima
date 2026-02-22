@@ -48,11 +48,10 @@ async function pushMessage(to, messages) {
 /* ────────────────────────────────────────────
    通知メッセージ生成
    ──────────────────────────────────────────── */
-function buildHimaNotification(displayName, liffId) {
-  const liffUrl = `https://liff.line.me/${liffId}`;
+function buildHimaNotification(displayName) {
   return {
     type: 'text',
-    text: `${displayName}さんはイマヒマしてます！\n\nイマヒマ。を開く▼\n${liffUrl}`,
+    text: `${displayName}さんはイマヒマしています！`,
   };
 }
 
@@ -101,17 +100,16 @@ export default async function handler(req, res) {
 
     /* ── 3. LINE Push: 自分のトークルームに通知 ── */
     if (isHima) {
-      const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
       const name = displayName || 'ユーザー';
 
       // 自分のボットとのトークルームに通知
       await pushMessage(userId, [
-        buildHimaNotification(name, liffId),
+        buildHimaNotification(name),
       ]);
 
       /* ── 4. LINE Push: 公開対象の友達に通知 ── */
       if (Array.isArray(visibleFriendIds) && visibleFriendIds.length > 0) {
-        const notification = buildHimaNotification(name, liffId);
+        const notification = buildHimaNotification(name);
 
         const pushPromises = visibleFriendIds.map((friendId) =>
           pushMessage(friendId, [notification])
