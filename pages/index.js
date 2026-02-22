@@ -216,7 +216,7 @@ function OnboardingScreen({ onSelect }) {
 /* ────────────────────────────────────────────
    05-01/05-03 TOP画面
    ──────────────────────────────────────────── */
-function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, onClose, toast }) {
+function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, toast }) {
   const himaFriends = friends.filter(f => f.isHima);
   const nonHimaFriends = friends.filter(f => !f.isHima);
   const isHima = user?.isHima;
@@ -226,8 +226,8 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, onClos
       display: 'flex', flexDirection: 'column', minHeight: '100dvh',
       backgroundColor: c.white, position: 'relative',
     }}>
-      {/* ヘッダー: ヒマ時は×ボタン表示 */}
-      <Header onClose={isHima ? onClose : undefined} />
+      {/* ヘッダー */}
+      <Header />
 
       {/* 友達リスト */}
       <div style={{
@@ -296,10 +296,10 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, onClos
       {/* フッター: isHima で状態分岐 */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        backgroundColor: c.green500,
+        backgroundColor: isHima ? c.gray50 : c.green500,
         borderRadius: '24px 24px 0 0',
         boxShadow: '0 0 24px rgba(0,0,0,0.25)',
-        padding: '24px 16px',
+        padding: '24px 16px 32px',
         display: 'flex', flexDirection: 'column', gap: 16,
         alignItems: 'center',
       }}>
@@ -328,14 +328,14 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, onClos
                 <>
                   <p style={{
                     margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
-                    lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
+                    lineHeight: 1.75, letterSpacing: 0.48, color: c.gray800,
                     whiteSpace: 'nowrap',
                   }}>
                     {user?.displayName ?? ''}さんは
                   </p>
                   <p style={{
                     margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
-                    lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
+                    lineHeight: 1.75, letterSpacing: 0.48, color: c.gray800,
                     whiteSpace: 'nowrap',
                   }}>
                     イマヒマしています！
@@ -585,7 +585,7 @@ function LoadingScreen() {
 /* ────────────────────────────────────────────
    画面遷移ラッパー（push アニメーション）
    ──────────────────────────────────────────── */
-function ScreenTransition({ children, direction }) {
+function ScreenTransition({ children, direction, isExiting }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     requestAnimationFrame(() => setMounted(true));
@@ -593,11 +593,12 @@ function ScreenTransition({ children, direction }) {
   }, []);
 
   const offset = direction === 'push' ? '100%' : '-30%';
+  const transform = isExiting ? `translateX(${offset})` : (mounted ? 'translateX(0)' : `translateX(${offset})`);
 
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 10,
-      transform: mounted ? 'translateX(0)' : `translateX(${offset})`,
+      transform,
       transition: 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       backgroundColor: c.white,
     }}>
@@ -616,6 +617,7 @@ export default function Home() {
   const [friends, setFriends] = useState([]);
   const [toast, setToast] = useState(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [settingsExiting, setSettingsExiting] = useState(false);
   const profileRef = useRef(null);
 
   /* ── LIFF 初期化 ── */
@@ -938,16 +940,21 @@ export default function Home() {
             onInvite={handleInviteFriends}
             onGoToSettings={() => navigateTo('settings')}
             onStopHima={handleStopHima}
-            onClose={handleClose}
             toast={toast}
           />
         )}
 
-        {view === 'settings' && (
-          <ScreenTransition direction="push">
+        {(view === 'settings' || settingsExiting) && (
+          <ScreenTransition direction="push" isExiting={settingsExiting}>
             <SettingsScreen
               friends={friends}
-              onBack={() => navigateTo('top')}
+              onBack={() => {
+                setSettingsExiting(true);
+                setTimeout(() => {
+                  setSettingsExiting(false);
+                  navigateTo('top');
+                }, 300);
+              }}
               onPublish={handlePublishStatus}
               isPublishing={isPublishing}
             />
