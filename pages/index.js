@@ -86,6 +86,39 @@ function Toast({ message, visible }) {
 }
 
 /* ────────────────────────────────────────────
+   Spinner コンポーネント
+   ──────────────────────────────────────────── */
+function Spinner() {
+  return (
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+      <div style={{
+        width: 32, height: 32, border: `3px solid ${c.gray200}`,
+        borderTopColor: c.green500, borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+    </>
+  );
+}
+
+/* ────────────────────────────────────────────
+   ローディングオーバーレイ
+   ──────────────────────────────────────────── */
+function LoadingOverlay() {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 50,
+      backgroundColor: 'rgba(255,255,255,0.8)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <Spinner />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
    Header コンポーネント
    ──────────────────────────────────────────── */
 function Header({ onBack, onClose, showLogo = true }) {
@@ -116,97 +149,6 @@ function Header({ onBack, onClose, showLogo = true }) {
         <img src="/images/logo.svg" alt="イマヒマ。" style={{ height: 48 }} />
       )}
       <div style={{ width: 40, height: 44 }} />
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────
-   04-01 トークルーム画面
-   ──────────────────────────────────────────── */
-function TalkRoomScreen({ onShare, onGoToTop }) {
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', minHeight: '100dvh',
-      backgroundColor: c.white,
-    }}>
-      {/* ヘッダー */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '20px 16px', width: '100%', boxSizing: 'border-box',
-      }}>
-        <div style={{ width: 40, height: 44 }} />
-        <p style={{
-          margin: 0, fontFamily: font, fontWeight: 400, fontSize: 24,
-          lineHeight: 1.67, letterSpacing: 0.6, color: c.gray800,
-          textAlign: 'center',
-        }}>
-          イマヒマ。
-        </p>
-        <div style={{ width: 40, height: 44 }} />
-      </div>
-
-      {/* トーク本文 */}
-      <div style={{
-        flex: 1, padding: 16, display: 'flex', flexDirection: 'column',
-      }}>
-        <div style={{ paddingRight: 24 }}>
-          <div style={{
-            border: `1px solid ${c.gray200}`, padding: '4px 8px',
-          }}>
-            <p style={{
-              margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
-              lineHeight: 1.75, letterSpacing: 0.48, color: c.gray800,
-            }}>
-              イマヒマ。に登録いただきありがとうございます！{'\n'}
-              下のメニューから友達と暇な状況をシェアしてください！
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* フッター: 2カラムグリッド */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr',
-        gap: 16, padding: 16,
-      }}>
-        {/* イマヒマ。をシェア */}
-        <button onClick={onShare} style={{
-          backgroundColor: c.gray50, border: `2px solid ${c.gray300}`,
-          borderRadius: 8, padding: '10px 12px', cursor: 'pointer',
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', gap: 8, height: 92,
-        }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 5L12 1L8 5" stroke={c.gray800} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 1V15" stroke={c.gray800} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M6 9H4C3.44772 9 3 9.44772 3 10V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V10C21 9.44772 20.5523 9 20 9H18" stroke={c.gray800} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <p style={{
-            margin: 0, fontFamily: font, fontWeight: 500, fontSize: 16,
-            lineHeight: 1.75, letterSpacing: 0.48, color: c.gray800,
-            textAlign: 'center',
-          }}>
-            イマヒマ。をシェア
-          </p>
-        </button>
-
-        {/* アプリTOPへ */}
-        <button onClick={onGoToTop} style={{
-          backgroundColor: c.green500, border: 'none',
-          borderRadius: 8, padding: '10px 16px', cursor: 'pointer',
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', gap: 8,
-        }}>
-          <img src="/images/logo.svg" alt="イマヒマ。" style={{ height: 48 }} />
-          <p style={{
-            margin: 0, fontFamily: font, fontWeight: 500, fontSize: 16,
-            lineHeight: 1.75, letterSpacing: 0.48, color: c.gray50,
-            textAlign: 'center',
-          }}>
-            アプリTOPへ
-          </p>
-        </button>
-      </div>
     </div>
   );
 }
@@ -436,6 +378,7 @@ function TopScreen({ user, friends, onInvite, onGoToSettings, onStopHima, onClos
           <button onClick={onStopHima} style={{
             ...baseBtn,
             backgroundColor: c.white, color: c.gray800,
+            border: `1px solid ${c.gray300}`,
           }}>
             ヒマじゃなくなった。
           </button>
@@ -506,7 +449,7 @@ function FriendRow({ friend, isHima = false }) {
 /* ────────────────────────────────────────────
    07-01 公開範囲設定画面
    ──────────────────────────────────────────── */
-function SettingsScreen({ friends, onBack, onPublish }) {
+function SettingsScreen({ friends, onBack, onPublish, isPublishing }) {
   const [visibility, setVisibility] = useState(() => {
     const map = {};
     friends.forEach(f => { map[f.userId] = f.isVisible !== false; });
@@ -604,17 +547,22 @@ function SettingsScreen({ friends, onBack, onPublish }) {
       <div style={{ padding: 16 }}>
         <button
           onClick={handlePublish}
-          disabled={friends.length === 0}
+          disabled={friends.length === 0 || isPublishing}
           style={{
             ...baseBtn,
-            backgroundColor: friends.length === 0 ? c.gray300 : c.green500,
+            backgroundColor: (friends.length === 0 || isPublishing) ? c.gray300 : c.green500,
             color: c.gray50,
-            cursor: friends.length === 0 ? 'not-allowed' : 'pointer',
+            cursor: (friends.length === 0 || isPublishing) ? 'not-allowed' : 'pointer',
+            gap: 8,
           }}
         >
-          暇状態を公開する
+          {isPublishing && <Spinner />}
+          {isPublishing ? '公開中...' : '暇状態を公開する'}
         </button>
       </div>
+
+      {/* ローディングオーバーレイ */}
+      {isPublishing && <LoadingOverlay />}
     </div>
   );
 }
@@ -662,11 +610,12 @@ function ScreenTransition({ children, direction }) {
    メインページコンポーネント
    ════════════════════════════════════════════ */
 export default function Home() {
-  const [view, setView] = useState('loading');       // loading | talkroom | onboarding | top | settings
+  const [view, setView] = useState('loading');       // loading | onboarding | top | settings
   const [prevView, setPrevView] = useState(null);
   const [user, setUser] = useState(null);
   const [friends, setFriends] = useState([]);
   const [toast, setToast] = useState(null);
+  const [isPublishing, setIsPublishing] = useState(false);
   const profileRef = useRef(null);
 
   /* ── LIFF 初期化 ── */
@@ -683,71 +632,6 @@ export default function Home() {
         const profile = await liff.getProfile();
         profileRef.current = profile;
 
-        // ?action=share の場合、shareTargetPickerを自動起動してLIFFを閉じる
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('action') === 'share') {
-          const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-          const liffUrl = `https://liff.line.me/${liffId}?inviter=${profile.userId}`;
-
-          if (liff.isApiAvailable('shareTargetPicker')) {
-            try {
-              await liff.shareTargetPicker([
-                {
-                  type: 'flex',
-                  altText: 'イマヒマ。への招待',
-                  contents: {
-                    type: 'bubble',
-                    body: {
-                      type: 'box',
-                      layout: 'vertical',
-                      contents: [
-                        {
-                          type: 'image',
-                          url: `${window.location.origin}/images/logo.png`,
-                          size: 'md',
-                          aspectRatio: '4:1',
-                          aspectMode: 'fit',
-                          align: 'start',
-                        },
-                        {
-                          type: 'text',
-                          text: `${profile.displayName}さんがイマヒマ。に招待しています`,
-                          margin: 'md',
-                          size: 'sm',
-                          wrap: true,
-                        },
-                      ],
-                    },
-                    footer: {
-                      type: 'box',
-                      layout: 'vertical',
-                      contents: [
-                        {
-                          type: 'button',
-                          action: {
-                            type: 'uri',
-                            label: 'イマヒマ。を始める',
-                            uri: liffUrl,
-                          },
-                          style: 'primary',
-                          color: '#22c55e',
-                        },
-                      ],
-                    },
-                  },
-                },
-              ]);
-            } catch (shareErr) {
-              console.error('Share from rich menu error:', shareErr);
-            }
-          }
-          // shareTargetPicker完了後、LIFFを閉じてトークルームに戻る
-          if (liff.isApiAvailable('closeWindow')) {
-            liff.closeWindow();
-          }
-          return;
-        }
-
         await loadUserData(profile.userId, profile);
       } catch (err) {
         console.error('LIFF init error:', err);
@@ -761,7 +645,6 @@ export default function Home() {
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
-      // 新規ユーザー: inviter がいれば友達関係を作成
       const params = new URLSearchParams(window.location.search);
       const inviterId = params.get('inviter');
 
@@ -787,10 +670,8 @@ export default function Home() {
       return;
     }
 
-    // 既存ユーザー
     const data = userSnap.data();
 
-    // 暇状態の自動期限切れチェック
     let isHima = data.isHima;
     if (isHima && data.himaExpiresAt) {
       const expiresAt = data.himaExpiresAt.toDate();
@@ -800,7 +681,6 @@ export default function Home() {
       }
     }
 
-    // inviter チェック（既存ユーザーが招待リンクで来た場合）
     const params = new URLSearchParams(window.location.search);
     const inviterId = params.get('inviter');
     if (inviterId && inviterId !== lineUserId) {
@@ -826,7 +706,6 @@ export default function Home() {
 
     const inviterData = inviterSnap.data();
 
-    // 自分 → 招待者
     await setDoc(doc(db, 'users', userId, 'friends', inviterId), {
       displayName: inviterData.displayName,
       pictureUrl: inviterData.pictureUrl ?? '',
@@ -834,7 +713,6 @@ export default function Home() {
       addedAt: serverTimestamp(),
     });
 
-    // 招待者 → 自分
     await setDoc(doc(db, 'users', inviterId, 'friends', userId), {
       displayName: profile.displayName,
       pictureUrl: profile.pictureUrl ?? '',
@@ -902,8 +780,6 @@ export default function Home() {
     const userId = user?.userId ?? profileRef.current?.userId;
     const liffUrl = `https://liff.line.me/${liffId}?inviter=${userId}`;
 
-    // ロゴ画像URL（Vercelデプロイ先ドメインから取得）
-    // ※ LINE Flex MessageはJPEG/PNGのみ対応。SVGで動かない場合はPNGに変換してください
     const logoUrl = typeof window !== 'undefined'
       ? `${window.location.origin}/images/logo.png`
       : `https://liff.line.me/${liffId}/images/logo.png`;
@@ -966,6 +842,7 @@ export default function Home() {
 
   /* ── 暇状態を公開 ── */
   async function handlePublishStatus(visibleFriendIds) {
+    setIsPublishing(true);
     try {
       const res = await fetch('/api/notify', {
         method: 'POST',
@@ -982,14 +859,15 @@ export default function Home() {
 
       setUser(prev => ({ ...prev, isHima: true }));
 
-      // 友達リスト再読込
       await loadFriends(user.userId);
 
+      setIsPublishing(false);
       navigateTo('top');
       setTimeout(() => {
         showToast('暇状態を公開しました。');
       }, 350);
     } catch (err) {
+      setIsPublishing(false);
       console.error('Publish error:', err);
       alert('エラーが発生しました。もう一度お試しください。');
     }
@@ -1014,14 +892,6 @@ export default function Home() {
   function handleClose() {
     if (liff.isApiAvailable('closeWindow')) {
       liff.closeWindow();
-    }
-  }
-
-  /* ── トークルームからアプリTOPへ遷移 ── */
-  async function handleGoToTopFromTalkRoom() {
-    const profile = profileRef.current;
-    if (profile) {
-      await loadUserData(profile.userId, profile);
     }
   }
 
@@ -1057,36 +927,6 @@ export default function Home() {
       <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', overflow: 'hidden' }}>
         {view === 'loading' && <LoadingScreen />}
 
-        {view === 'closePrompt' && (
-          <div style={{
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            minHeight: '100dvh', backgroundColor: c.white, gap: 16, padding: 16,
-          }}>
-            <p style={{
-              margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
-              lineHeight: 1.75, color: c.gray500, textAlign: 'center',
-            }}>
-              トークルームに戻るには下のボタンを押してください
-            </p>
-            <button onClick={() => {
-              if (liff.isApiAvailable('closeWindow')) liff.closeWindow();
-            }} style={{
-              ...baseBtn, width: 'auto', padding: '10px 32px',
-              backgroundColor: c.green500, color: c.white,
-            }}>
-              閉じる
-            </button>
-          </div>
-        )}
-
-        {view === 'talkroom' && (
-          <TalkRoomScreen
-            onShare={handleInviteFriends}
-            onGoToTop={handleGoToTopFromTalkRoom}
-          />
-        )}
-
         {view === 'onboarding' && (
           <OnboardingScreen onSelect={handleOnboardingSelect} />
         )}
@@ -1109,6 +949,7 @@ export default function Home() {
               friends={friends}
               onBack={() => navigateTo('top')}
               onPublish={handlePublishStatus}
+              isPublishing={isPublishing}
             />
           </ScreenTransition>
         )}
