@@ -165,14 +165,14 @@ function OnboardingScreen({ onSelect }) {
       {/* タイトル */}
       <div style={{ padding: 16, flexShrink: 0 }}>
         <p style={{
-          margin: 0, fontFamily: font, fontWeight: 600, fontSize: 40,
+          margin: 0, fontFamily: font, fontWeight: 600, fontSize: 34,
           lineHeight: 1.5, letterSpacing: 0.6, color: c.white,
         }}>
           イマヒマ。を<br />始めましょう！<br />あなたは今暇ですか？
         </p>
       </div>
 
-      {/* イラスト（フレキシブル） */}
+      {/* イラスト（固定サイズ） */}
       <div style={{
         flex: 1, minHeight: 0, display: 'flex',
         alignItems: 'center', justifyContent: 'center',
@@ -181,7 +181,7 @@ function OnboardingScreen({ onSelect }) {
         <img
           src="/images/onboarding-bears.svg"
           alt="シロクマ"
-          style={{ maxWidth: 320, maxHeight: '100%', objectFit: 'contain' }}
+          style={{ width: 320, height: 320, objectFit: 'contain', flexShrink: 0 }}
         />
       </div>
 
@@ -204,8 +204,9 @@ function OnboardingScreen({ onSelect }) {
           ヒマじゃない
         </button>
         <p style={{
-          margin: 0, fontFamily: font, fontWeight: 400, fontSize: 16,
-          lineHeight: 1.75, letterSpacing: 0.48, color: c.white,
+          margin: 0, fontFamily: font, fontWeight: 400, fontSize: 12,
+          lineHeight: 1.5, letterSpacing: 0.36, color: c.white,
+          whiteSpace: 'nowrap', width: '100%', textAlign: 'center',
         }}>
           暇な状態は1時間たつと自動的に解除されます。
         </p>
