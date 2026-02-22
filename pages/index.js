@@ -168,7 +168,7 @@ function OnboardingScreen({ onSelect }) {
           margin: 0, fontFamily: font, fontWeight: 600, fontSize: 34,
           lineHeight: 1.5, letterSpacing: 0.6, color: c.white,
         }}>
-          イマヒマ。を<br />始めましょう！<br />あなたは今暇ですか？
+          イマヒマ。を<br />始めましょう！<br /><span style={{ whiteSpace: 'nowrap' }}>あなたは今暇ですか？</span>
         </p>
       </div>
 
@@ -181,7 +181,7 @@ function OnboardingScreen({ onSelect }) {
         <img
           src="/images/onboarding-bears.svg"
           alt="シロクマ"
-          style={{ width: 320, height: 320, objectFit: 'contain', flexShrink: 0 }}
+          style={{ width: 272, height: 272, objectFit: 'contain', flexShrink: 0 }}
         />
       </div>
 
